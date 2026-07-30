@@ -46,6 +46,12 @@ const checks = [
    store.tRaised.firstChild.nodeValue ===
      "£" + Math.round(data.summary.total_raised / 1e6) + "m",
    store.tRaised.firstChild.nodeValue],
+  ["region rows rendered",
+   (store.regionRows.innerHTML.match(/<tr>/g) || []).length === data.summary.regions.length,
+   (store.regionRows.innerHTML.match(/<tr>/g) || []).length],
+  ["region column populated in the lot table", /West Midlands|East Midlands/.test(rows)],
+  ["geo line mentions local authorities", /local authorities/.test(store.geoLine.textContent),
+   store.geoLine.textContent],
   ["source line names both houses",
    /SDL/.test(store.tSources.textContent) && /Bond Wolfe/.test(store.tSources.textContent),
    store.tSources.textContent],

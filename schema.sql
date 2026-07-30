@@ -79,6 +79,36 @@ create index if not exists ppd_postcode_paon_idx on ppd (postcode, lower(paon));
 create index if not exists ppd_postcode_prefix_idx on ppd (postcode text_pattern_ops);
 create index if not exists ppd_type_date_idx on ppd (property_type, transfer_date);
 
+-- Postcode -> area reference data (postcodes.io, OGL). Keyed by postcode rather
+-- than by lot: it is postcode-level fact, it never changes, and ~7k lots share
+-- ~6k postcodes, so this is looked up once and reused forever.
+--
+-- admin_district_code is the ONS code (e.g. E08000025 Birmingham) and is what
+-- joins to hpi.area_code — without it every comp in the corpus is time-adjusted
+-- by a single national index regardless of where the property is.
+create table if not exists postcode_geo (
+  postcode                   text primary key,
+  admin_district             text,      -- local authority, e.g. 'Birmingham'
+  admin_district_code        text,      -- ONS code, joins to hpi.area_code
+  admin_county               text,
+  admin_county_code          text,
+  admin_ward                 text,
+  region                     text,      -- e.g. 'West Midlands', 'London'
+  country                    text,
+  parliamentary_constituency text,
+  lsoa                       text,
+  latitude                   numeric,
+  longitude                  numeric
+);
+create index if not exists postcode_geo_district_idx on postcode_geo (admin_district_code);
+create index if not exists postcode_geo_region_idx   on postcode_geo (region);
+
+-- Lots carry a postcode, so area comes from a join rather than a duplicated column.
+create or replace view lots_geo as
+  select l.*, g.admin_district, g.admin_district_code, g.region, g.admin_county,
+         g.latitude, g.longitude
+  from lots l left join postcode_geo g on g.postcode = l.postcode;
+
 -- UK House Price Index (monthly, by local authority) for time-adjusting comps.
 -- NOTE: rows exist per area_code, so any lookup by month alone must also pin an
 -- area_code or it picks an arbitrary region's index.

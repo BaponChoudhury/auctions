@@ -155,6 +155,27 @@
   </section>
 
   <section>
+    <h2>Where the lots are</h2>
+    <p class="lede" style="font-size:.95rem">Every lot is resolved from its postcode to a
+      local authority and region — <span id="geoLine">99% of them</span>. Both auction houses
+      are Midlands-based, so the sample is heavily weighted there: that is a bias in this
+      corpus, not a fact about the UK market.</p>
+    <div class="scroll" style="margin-top:1.1rem">
+      <table>
+        <thead>
+          <tr><th>Region</th><th class="num" style="text-align:right">Sold lots</th>
+              <th class="num" style="text-align:right">Median sale</th>
+              <th>Share of sold lots</th></tr>
+        </thead>
+        <tbody id="regionRows"></tbody>
+      </table>
+    </div>
+    <p class="note"><strong>Median sale runs from £45,000 in the North East to £293,000 in
+      London — a 6.5× spread.</strong> That is why the pipeline now time-adjusts comps using
+      each lot's own local-authority house-price index rather than one national figure.</p>
+  </section>
+
+  <section>
     <h2>The lots</h2>
     <p class="lede" style="font-size:.95rem;margin-bottom:1.1rem">Sortable. Click any address to
       open the original listing.</p>
@@ -168,6 +189,7 @@
         <thead>
           <tr>
             <th class="sortable" data-key="address_raw">Address</th>
+            <th class="sortable" data-key="region">Region</th>
             <th class="sortable" data-key="source">House</th>
             <th class="sortable" data-key="property_type">Type</th>
             <th class="sortable num" data-key="guide_price" style="text-align:right">Guide</th>
@@ -254,6 +276,20 @@
       s[2] + '"></span></span><span class="n">' + n + '</span></div>';
   }).join('');
 
+  // Regional breakdown
+  document.getElementById('geoLine').textContent =
+    Math.round(S.geo_resolved / S.total * 100) + '% of them, across ' +
+    S.districts + ' local authorities';
+  var maxR = Math.max.apply(null, S.regions.map(function(r){ return r.n; }));
+  document.getElementById('regionRows').innerHTML = S.regions.map(function(r){
+    return '<tr><td>' + r.region + '</td>' +
+      '<td class="num">' + num(r.n) + '</td>' +
+      '<td class="num">' + money(r.median) + '</td>' +
+      '<td><span class="track" style="display:block;background:var(--slate-sub);' +
+      'border-radius:2px;height:1rem"><span class="fill" style="display:block;height:100%;' +
+      'border-radius:2px;background:var(--accent);width:' + (r.n/maxR*100) + '%"></span></span></td></tr>';
+  }).join('');
+
   var view = 'sold', sortKey = 'hammer_price', sortDir = -1;
 
   function render(){
@@ -276,6 +312,8 @@
       var addr = r.address_raw.replace(/,?\s*[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/,'');
       return '<tr><td class="addr"><a href="' + r.lot_url + '">' + addr + '</a>' +
         '<div class="pc">' + (r.postcode || '') + ' · ' + (r.auction_date || '') + '</div></td>' +
+        '<td>' + (r.region || '<span class="dash">—</span>') +
+        (r.district ? '<div class="pc">' + r.district + '</div>' : '') + '</td>' +
         '<td><span class="pill p-slate">' + (HOUSE[r.source] || r.source) + '</span></td>' +
         '<td>' + (TYPE[r.property_type] || '<span class="dash">—</span>') + '</td>' +
         '<td class="num">' + money(r.guide_price) + '</td>' +

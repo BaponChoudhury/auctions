@@ -21,6 +21,7 @@ from scrape_bondwolfe import (
     parse_auction_date,
     parse_type,
 )
+from geo import _shape as geo_shape, lookup as geo_lookup
 
 
 # ------------------------------------------------------------------ status ---
@@ -251,6 +252,59 @@ def test_bondwolfe_tagline(tagline, code, beds):
 ])
 def test_bondwolfe_auction_date(text, iso):
     assert parse_auction_date(text) == iso
+
+
+# ------------------------------------------------------------------- geography ---
+def _pio(**over):
+    """A postcodes.io result, shaped like the real API response."""
+    base = {"admin_district": "Birmingham", "admin_county": None,
+            "admin_ward": "Handsworth Wood", "region": "West Midlands",
+            "country": "England", "parliamentary_constituency": "Birmingham Perry Barr",
+            "lsoa": "Birmingham 032D", "latitude": 52.516163, "longitude": -1.936939,
+            "codes": {"admin_district": "E08000025", "admin_county": "E99999999"}}
+    base.update(over)
+    return base
+
+
+def test_geo_keeps_the_ons_code_that_joins_to_hpi():
+    g = geo_shape(_pio())
+    assert g["admin_district_code"] == "E08000025"
+    assert g["admin_district"] == "Birmingham"
+    assert g["region"] == "West Midlands"
+
+
+def test_geo_drops_the_not_applicable_county_sentinel():
+    """postcodes.io returns E99999999 for 'no county', which is not an area code
+    and would silently become a bogus hpi.area_code join key."""
+    assert geo_shape(_pio())["admin_county_code"] is None
+
+
+def test_geo_keeps_a_real_county_code():
+    g = geo_shape(_pio(admin_county="Staffordshire",
+                       codes={"admin_district": "E07000193",
+                              "admin_county": "E10000028"}))
+    assert g["admin_county_code"] == "E10000028"
+
+
+def test_geo_shape_has_every_column_the_upsert_writes():
+    g = geo_shape(_pio())
+    for col in ("admin_district", "admin_district_code", "admin_county",
+                "admin_county_code", "admin_ward", "region", "country",
+                "parliamentary_constituency", "lsoa", "latitude", "longitude"):
+        assert col in g, col
+
+
+def test_lookup_uses_cache_and_makes_no_request():
+    """A cached postcode must not hit the network — the corpus is ~6k postcodes
+    and area data never changes."""
+    cache = {"B20 2JH": geo_shape(_pio())}
+
+    class Boom:
+        def post(self, *a, **k):
+            raise AssertionError("network call for an already-cached postcode")
+
+    out = geo_lookup(["B20 2JH"], cache=cache, session=Boom(), verbose=False)
+    assert out["B20 2JH"]["admin_district_code"] == "E08000025"
 
 
 def test_both_sources_emit_the_same_record_shape():

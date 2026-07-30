@@ -20,7 +20,8 @@ print("  summary keys:", ", ".join(data["summary"]))
 
 # Keys the renderer reads must exist on every row.
 needed = {"source", "address_raw", "postcode", "property_type", "guide_price",
-          "hammer_price", "uplift_pct", "condition", "lot_url", "auction_date"}
+          "hammer_price", "uplift_pct", "condition", "lot_url", "auction_date",
+          "region", "district"}
 for bucket in ("sold", "repeat"):
     for i, r in enumerate(data[bucket]):
         missing = needed - set(r)
@@ -45,6 +46,15 @@ print(f"consistent: {s['total']:,} lots, {len(s['sources'])} sources, "
 # The prose hard-codes these; if the data moves, the copy is wrong.
 assert f"{s['total']:,}" in html, "headline total not present in page copy"
 assert str(s["events"]) in html, "event count not present in page copy"
+
+# The regional spread is quoted verbatim in the prose, so verify it from the rows.
+regions = {r["region"]: r["median"] for r in s["regions"]}
+lo, hi = min(regions, key=regions.get), max(regions, key=regions.get)
+spread = regions[hi] / regions[lo]
+assert f"£{regions[lo]:,}" in html and f"£{regions[hi]:,}" in html, (lo, hi)
+assert f"{spread:.1f}×" in html, f"quoted spread does not match data ({spread:.1f})"
+print(f"regional spread in copy matches data: {lo} £{regions[lo]:,} -> "
+      f"{hi} £{regions[hi]:,} ({spread:.1f}x)")
 print("page copy matches the data it describes")
 
 for tag in ("<title>", "</style>", "</script>"):

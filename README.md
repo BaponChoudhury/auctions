@@ -6,6 +6,8 @@ All data sources are free. No paid APIs.
 
 | Field | Source | Cost |
 |---|---|---|
+| Postcode, sector | Parsed from the lot address | Free (derived) |
+| Town, local authority, region, lat/lng | postcodes.io (ONS data) | Free (OGL, no key) |
 | Guide/start price | Auction house results pages (SDL first) | Free (scrape) |
 | Final sale (hammer) price | Auction house results pages | Free (scrape) |
 | Sold / unsold / withdrawn | Auction house results pages | Free (scrape) |
@@ -65,6 +67,45 @@ SDL, Network Auctions and Savills (GPTBot only); Bond Wolfe, Allsop, Pugh and
 Barnett Ross have none. Auction House UK and Clive Emson return 406 for
 `robots.txt` and need a closer look before scraping. Re-check before adding any
 source — `tools/probe_sources.py` does this.
+
+## Geography
+
+The scrapers record a **postcode** (99% coverage) and derive a **postcode sector**,
+but no town, region or local authority — those only existed inside the raw address
+string. `src/geo.py` resolves postcode → area via postcodes.io (free, OGL, no key,
+100 per request) and caches to disk, since postcode→area never changes.
+
+```bash
+python src/geo.py --lots data/sdl_all.jsonl data/bw_all.jsonl --to-db
+```
+
+Current corpus: **4,802 of 4,813 postcodes resolved (99%), across 300 local
+authorities.**
+
+This is not cosmetic. `hpi` is keyed by `(area_code, month)` where `area_code` is
+an ONS code, and `postcode_geo.admin_district_code` is exactly that code. Before
+this, every comp in the corpus was time-adjusted by one national index. The corpus
+median sale runs from **£45,000 in the North East to £293,000 in London — a 6.5×
+spread**, so a single national ratio was never going to be right. `enrich.py` now
+resolves each lot's local-authority series and falls back to national only when the
+postcode cannot be resolved. Setting `HPI_AREA_CODE` forces every lot back onto one
+series and says so on stderr.
+
+Area lives in `postcode_geo` rather than as columns on `lots`: it is postcode-level
+fact, and ~7k lots share ~4.8k postcodes. Join through the `lots_geo` view.
+
+| Region | Sold lots | Median sale |
+|---|---|---|
+| West Midlands | 1,276 | £137,000 |
+| East Midlands | 834 | £125,000 |
+| Yorkshire & Humber | 155 | £83,000 |
+| North West | 133 | £99,000 |
+| North East | 83 | £45,000 |
+| London | 20 | £293,000 |
+
+Note the sample is heavily Midlands-weighted — both auction houses are Midlands-based.
+That is a real selection bias in the corpus, not a fact about the UK auction market,
+and it is the main reason to keep adding sources.
 
 ## How the SDL scraper actually works
 

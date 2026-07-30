@@ -7,9 +7,17 @@ import collections, json, statistics, sys
 sys.path.insert(0, "../src")
 from enrich import classify_condition
 
+from geo import load_cache
+
 lots = []
 for path in sys.argv[1:]:
     lots += [json.loads(l) for l in open(path, encoding="utf-8")]
+
+geo = load_cache()
+for l in lots:
+    g = geo.get(l.get("postcode") or "")
+    l["region"] = g["region"] if g else None
+    l["district"] = g["admin_district"] if g else None
 
 # Descriptions were fetched separately for a sample of SDL lots.
 try:
@@ -50,11 +58,24 @@ summary = {
     "cross_source_properties": sum(1 for v in seen.values() if len(v) > 1),
     "date_min": min(l["auction_date"] for l in lots if l["auction_date"]),
     "date_max": max(l["auction_date"] for l in lots if l["auction_date"]),
+    "geo_resolved": sum(1 for l in lots if l["region"]),
+    "districts": len({l["district"] for l in lots if l["district"]}),
 }
+
+# Regional breakdown: the reason a single national HPI index was wrong.
+by_region = collections.defaultdict(list)
+for l in sold:
+    if l["region"]:
+        by_region[l["region"]].append(l["hammer_price"])
+summary["regions"] = sorted(
+    ({"region": k, "n": len(v), "median": int(statistics.median(v)), "total": sum(v)}
+     for k, v in by_region.items() if len(v) >= 15),
+    key=lambda r: -r["n"])
 print(json.dumps(summary, indent=1))
 
 keep = ("source", "address_raw", "postcode", "property_type", "bedrooms", "guide_price",
-        "hammer_price", "uplift_pct", "status", "condition", "lot_url", "auction_date")
+        "hammer_price", "uplift_pct", "status", "condition", "lot_url", "auction_date",
+        "region", "district")
 
 
 def slim(rows):

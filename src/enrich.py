@@ -245,6 +245,23 @@ def prior_sales(conn, postcode: str, address: str) -> dict:
     return {"prior_sale_price": row[0], "prior_sale_date": row[1]} if row else {}
 
 
+def hpi_area_for(conn, postcode: str | None, cache: dict) -> str:
+    """The lot's local-authority ONS code, falling back to the national series.
+
+    Without this every lot is adjusted by one index: a Lambeth flat and a Stoke
+    terrace move by the same ratio, which defeats the point of adjusting at all.
+    """
+    if not postcode:
+        return DEFAULT_HPI_AREA
+    if postcode not in cache:
+        with conn.cursor() as cur:
+            cur.execute("select admin_district_code from postcode_geo where postcode = %s",
+                        (postcode,))
+            row = cur.fetchone()
+        cache[postcode] = (row[0] if row and row[0] else None)
+    return cache[postcode] or DEFAULT_HPI_AREA
+
+
 def load_hpi_ratios(conn, area_code: str) -> dict:
     """month ('YYYY-MM') -> ratio scaling a sale in that month up to the latest month.
 
@@ -409,12 +426,15 @@ def main() -> None:
     if args.limit:
         lots = lots[: args.limit]
 
-    hpi_ratios = {}
-    if conn:
-        hpi_ratios = load_hpi_ratios(conn, os.environ.get("HPI_AREA_CODE", DEFAULT_HPI_AREA))
-        if not hpi_ratios:
-            print("  (no HPI rows for the configured area — comps will be unadjusted)",
-                  file=sys.stderr)
+    # HPI series are loaded lazily per local authority and reused across lots;
+    # a national run touches a few hundred areas, not one per lot.
+    forced_area = os.environ.get("HPI_AREA_CODE")
+    ratio_cache: dict[str, dict] = {}
+    area_cache: dict[str, str | None] = {}
+    if conn and forced_area:
+        ratio_cache[forced_area] = load_hpi_ratios(conn, forced_area)
+        print(f"  (HPI_AREA_CODE set — forcing every lot onto {forced_area})",
+              file=sys.stderr)
 
     session = requests.Session()
     for lot in lots:
@@ -423,9 +443,12 @@ def main() -> None:
             epc_lookup(lot.get("postcode"), lot.get("address_raw", ""), session) or {})
 
         if conn:
+            area = forced_area or hpi_area_for(conn, lot.get("postcode"), area_cache)
+            if area not in ratio_cache:
+                ratio_cache[area] = load_hpi_ratios(conn, area)
             prior = prior_sales(conn, lot.get("postcode"), lot.get("address_raw", ""))
             comps = sector_comps(conn, lot.get("postcode_sector"),
-                                 lot.get("property_type"), hpi_ratios)
+                                 lot.get("property_type"), ratio_cache[area])
             reoffers = reoffer_count(conn, lot.get("property_key"), lot.get("auction_date"))
         else:
             prior, comps, reoffers = {}, {"comp_count": 0, "comp_median_price": None}, 0
