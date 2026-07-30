@@ -1,0 +1,293 @@
+<title>Auction Results — Pipeline Output</title>
+<style>
+  :root {
+    --ink:#141A21; --paper:#F5F7F8; --surface:#FFFFFF; --rule:#DBE1E5;
+    --muted:#586470; --faint:#8A959E;
+    --accent:#1B3A5C; --accent-sub:#E5EBF1;
+    --up:#2C6E49; --up-sub:#E3EEE8;
+    --down:#9C3A2E; --down-sub:#F5E5E2;
+    --hold:#8A6218; --hold-sub:#F4EEDF;
+    --slate:#5C6875; --slate-sub:#E8EBEE;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --ink:#E6EBEF; --paper:#0E1318; --surface:#161D24; --rule:#28323C;
+    --muted:#94A0AC; --faint:#6A757F;
+    --accent:#8FB2D8; --accent-sub:#1A2632;
+    --up:#6FBE8E; --up-sub:#15271D; --down:#E08C7E; --down-sub:#2B1A17;
+    --hold:#D4A85A; --hold-sub:#282015; --slate:#93A0AC; --slate-sub:#1E262E;
+  }}
+  :root[data-theme="dark"]{
+    --ink:#E6EBEF; --paper:#0E1318; --surface:#161D24; --rule:#28323C;
+    --muted:#94A0AC; --faint:#6A757F;
+    --accent:#8FB2D8; --accent-sub:#1A2632;
+    --up:#6FBE8E; --up-sub:#15271D; --down:#E08C7E; --down-sub:#2B1A17;
+    --hold:#D4A85A; --hold-sub:#282015; --slate:#93A0AC; --slate-sub:#1E262E;
+  }
+  :root[data-theme="light"]{
+    --ink:#141A21; --paper:#F5F7F8; --surface:#FFFFFF; --rule:#DBE1E5;
+    --muted:#586470; --faint:#8A959E;
+    --accent:#1B3A5C; --accent-sub:#E5EBF1;
+    --up:#2C6E49; --up-sub:#E3EEE8; --down:#9C3A2E; --down-sub:#F5E5E2;
+    --hold:#8A6218; --hold-sub:#F4EEDF; --slate:#5C6875; --slate-sub:#E8EBEE;
+  }
+
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+       font-size:1rem;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:68rem;margin:0 auto;padding:2.5rem 1.25rem 4rem;
+        display:flex;flex-direction:column;gap:2.5rem;}
+  h1{font-family:var(--serif);font-size:2.25rem;font-weight:600;letter-spacing:-.02em;
+     line-height:1.15;text-wrap:balance;margin-bottom:.5rem;}
+  h2{font-family:var(--serif);font-size:1.3rem;font-weight:600;margin-bottom:.35rem;}
+  p{margin:0;}
+  a{color:var(--accent);}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;
+           letter-spacing:.13em;color:var(--faint);margin-bottom:.6rem;}
+  .lede{font-size:1.1rem;color:var(--muted);max-width:56ch;}
+  .src{font-family:var(--mono);font-size:.78rem;color:var(--faint);margin-top:1rem;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* summary tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
+         gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;overflow:hidden;}
+  .tiles div{background:var(--surface);padding:1.1rem 1.25rem;}
+  .tiles dt{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;
+            letter-spacing:.1em;color:var(--faint);margin-bottom:.4rem;}
+  .tiles dd{font-family:var(--serif);font-size:1.9rem;line-height:1;
+            font-variant-numeric:tabular-nums;}
+  .tiles dd span{font-family:var(--sans);font-size:.82rem;color:var(--muted);display:block;
+                 margin-top:.4rem;line-height:1.4;}
+
+  /* status breakdown */
+  .status-list{display:flex;flex-direction:column;gap:.55rem;margin-top:1.1rem;}
+  .status-row{display:grid;grid-template-columns:11rem 1fr 3rem;gap:.9rem;align-items:center;
+              font-size:.9rem;}
+  .status-row .track{background:var(--slate-sub);border-radius:2px;height:1.35rem;position:relative;}
+  .status-row .fill{height:100%;border-radius:2px;}
+  .status-row .n{font-family:var(--mono);font-variant-numeric:tabular-nums;
+                 text-align:right;color:var(--muted);font-size:.85rem;}
+  .status-row .lbl{font-family:var(--mono);font-size:.8rem;}
+  .note{font-size:.88rem;color:var(--muted);margin-top:1rem;max-width:64ch;}
+
+  /* controls */
+  .controls{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.9rem;}
+  .controls button{font-family:var(--mono);font-size:.78rem;padding:.4rem .8rem;
+    border:1px solid var(--rule);background:var(--surface);color:var(--muted);
+    border-radius:3px;cursor:pointer;}
+  .controls button:hover{border-color:var(--accent);color:var(--accent);}
+  .controls button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+    color:var(--paper);}
+  .count{font-family:var(--mono);font-size:.78rem;color:var(--faint);margin-left:auto;}
+
+  /* table */
+  .scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:4px;background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:44rem;}
+  th,td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid var(--rule);
+        vertical-align:middle;}
+  th{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;
+     color:var(--faint);font-weight:400;border-bottom:1px solid var(--ink);
+     position:sticky;top:0;background:var(--surface);white-space:nowrap;}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--accent);}
+  th[aria-sort]{color:var(--accent);}
+  th .caret{opacity:.55;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--accent-sub);}
+  td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;
+         white-space:nowrap;}
+  td.addr{min-width:17rem;}
+  td.addr a{text-decoration:none;color:inherit;}
+  td.addr a:hover{color:var(--accent);text-decoration:underline;}
+  .pc{color:var(--faint);font-family:var(--mono);font-size:.78rem;}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.72rem;
+        padding:.12rem .45rem;border-radius:2px;white-space:nowrap;}
+  .p-up{background:var(--up-sub);color:var(--up);}
+  .p-down{background:var(--down-sub);color:var(--down);}
+  .p-hold{background:var(--hold-sub);color:var(--hold);}
+  .p-slate{background:var(--slate-sub);color:var(--slate);}
+  .dash{color:var(--faint);}
+
+  .legend{display:grid;gap:.7rem;background:var(--surface);border:1px solid var(--rule);
+          border-radius:4px;padding:1.25rem 1.4rem;font-size:.9rem;}
+  .legend div{display:grid;grid-template-columns:8.5rem 1fr;gap:.9rem;}
+  .legend b{font-family:var(--mono);font-size:.8rem;font-weight:400;color:var(--accent);}
+  .legend span{color:var(--muted);}
+
+  footer{font-size:.82rem;color:var(--faint);border-top:1px solid var(--rule);padding-top:1.5rem;}
+  @media (max-width:32rem){
+    .status-row{grid-template-columns:7.5rem 1fr 2.5rem;}
+    h1{font-size:1.8rem;}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Pipeline output · live scrape</p>
+    <h1>224 lots from one property auction</h1>
+    <p class="lede">This is real data the scraper pulled from SDL's site — every lot from a
+      single auction, with what each one was guided at and what it actually sold for.</p>
+    <p class="src">SDL Property Auctions · 30 January 2025 · scraped 30 July 2026 · 1 request</p>
+  </header>
+
+  <section>
+    <dl class="tiles">
+      <div><dt>Lots in catalogue</dt><dd>224<span>Everything offered that day</span></dd></div>
+      <div><dt>Sold with a price</dt><dd>55<span>Only these publish a sale figure</span></dd></div>
+      <div><dt>Raised</dt><dd>£8.69m<span>Across those 55 lots</span></dd></div>
+      <div><dt>Median vs guide</dt><dd>+17%<span>52 of 53 beat their guide</span></dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>What happened to all 224 lots</h2>
+    <p class="lede" style="font-size:.95rem">Not every lot sells, and not every sale publishes a
+      price. This is the part that shapes any analysis built on top.</p>
+    <div class="status-list" id="statusList"></div>
+    <p class="note"><strong>Only 55 of 224 lots (25%) publish a sale price.</strong>
+      Another 60 sold <em>before</em> the auction — genuinely sold, but SDL publishes no figure
+      for them. So any "average discount" or "sell-through" number has to say which of these
+      groups it counts, or it quietly means something different from what it sounds like.</p>
+  </section>
+
+  <section>
+    <h2>Every lot that sold with a published price</h2>
+    <p class="lede" style="font-size:.95rem;margin-bottom:1.1rem">Sortable. Click any address to
+      open the original listing.</p>
+    <div class="controls">
+      <button type="button" data-filter="sold" aria-pressed="true">Sold (55)</button>
+      <button type="button" data-filter="unsold" aria-pressed="false">Didn't sell (12 shown)</button>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable" data-key="address_raw">Address</th>
+            <th class="sortable" data-key="property_type">Type</th>
+            <th class="sortable num" data-key="guide_price" style="text-align:right">Guide</th>
+            <th class="sortable num" data-key="hammer_price" style="text-align:right">Sold for</th>
+            <th class="sortable num" data-key="uplift_pct" style="text-align:right">vs guide</th>
+            <th class="sortable" data-key="condition">Condition</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reading the columns</h2>
+    <div class="legend">
+      <div><b>Guide</b><span>The published starting figure. It is a marketing number, not a
+        valuation — lots routinely sell well above it.</span></div>
+      <div><b>Sold for</b><span>The hammer price. Excludes buyer's fees, which are charged on
+        top.</span></div>
+      <div><b>vs guide</b><span>How far above the guide it went. The pipeline also computes a
+        discount against Land Registry comparables — that needs the sales database loaded
+        first.</span></div>
+      <div><b>Condition</b><span>Classified automatically from the listing text. Only filled in
+        where the description was fetched; blank means not yet retrieved, not "no
+        information".</span></div>
+      <div><b>Type</b><span>Mapped onto Land Registry categories so lots can be compared
+        like-for-like against real sold prices nearby.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>One outlier is excluded from the percentage figures: a parcel of land guided at £1 that
+      sold for £100 — real data, but a 9,900% uplift makes any average meaningless. It still
+      appears in the table below its sorted position.</p>
+    <p style="margin-top:.6rem">Code: <a href="https://github.com/BaponChoudhury/auctions">github.com/BaponChoudhury/auctions</a>
+      · Prices and addresses are factual auction results; listing descriptions are not reproduced here.</p>
+  </footer>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+(function(){
+  var D = JSON.parse(document.getElementById('payload').textContent);
+  var TYPE = {D:'Detached',S:'Semi',T:'Terraced',F:'Flat',O:'Land / other'};
+  var STATUS = [
+    ['sold_prior','Sold before',    'var(--hold)'],
+    ['sold',      'Sold at auction','var(--up)'],
+    ['unsold',    "Didn't sell",    'var(--down)'],
+    ['withdrawn', 'Withdrawn',      'var(--slate)'],
+    ['postponed', 'Postponed',      'var(--slate)'],
+    ['sold_after','Sold after',     'var(--up)']
+  ];
+  var money = function(n){
+    if (n === null || n === undefined) return '—';
+    return '£' + n.toLocaleString('en-GB');
+  };
+
+  // status breakdown
+  var max = Math.max.apply(null, STATUS.map(function(s){ return D.summary.status[s[0]] || 0; }));
+  document.getElementById('statusList').innerHTML = STATUS.map(function(s){
+    var n = D.summary.status[s[0]] || 0;
+    return '<div class="status-row"><span class="lbl">' + s[1] + '</span>' +
+      '<span class="track"><span class="fill" style="width:' + (n/max*100) + '%;background:' +
+      s[2] + '"></span></span><span class="n">' + n + '</span></div>';
+  }).join('');
+
+  var view = 'sold', sortKey = 'uplift_pct', sortDir = -1;
+
+  function render(){
+    var rows = D[view].slice().sort(function(a,b){
+      var x = a[sortKey], y = b[sortKey];
+      if (x === null || x === undefined) return 1;
+      if (y === null || y === undefined) return -1;
+      if (typeof x === 'string') return x.localeCompare(y) * sortDir;
+      return (x - y) * sortDir;
+    });
+    document.getElementById('rows').innerHTML = rows.map(function(r){
+      var u = r.uplift_pct, pill = '<span class="dash">—</span>';
+      if (u !== null && u !== undefined) {
+        var cls = u > 0 ? 'p-up' : (u < 0 ? 'p-down' : 'p-slate');
+        pill = '<span class="pill ' + cls + '">' + (u > 0 ? '+' : '') + u + '%</span>';
+      }
+      var cond = r.condition
+        ? '<span class="pill p-slate">' + r.condition.replace(/_/g,' ') + '</span>'
+        : '<span class="dash">—</span>';
+      var addr = r.address_raw.replace(/,?\s*[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/,'');
+      return '<tr><td class="addr"><a href="' + r.lot_url + '">' + addr + '</a>' +
+        '<div class="pc">' + (r.postcode || '') + '</div></td>' +
+        '<td>' + (TYPE[r.property_type] || '<span class="dash">—</span>') + '</td>' +
+        '<td class="num">' + money(r.guide_price) + '</td>' +
+        '<td class="num">' + money(r.hammer_price) + '</td>' +
+        '<td class="num">' + pill + '</td>' +
+        '<td>' + cond + '</td></tr>';
+    }).join('');
+    document.getElementById('count').textContent = rows.length + ' lots';
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.controls button'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('.controls button'), function(o){
+        o.setAttribute('aria-pressed', String(o === b));
+      });
+      view = b.dataset.filter;
+      render();
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('th.sortable'), function(th){
+    th.addEventListener('click', function(){
+      var k = th.dataset.key;
+      sortDir = (k === sortKey) ? -sortDir : (k === 'address_raw' ? 1 : -1);
+      sortKey = k;
+      Array.prototype.forEach.call(document.querySelectorAll('th'), function(o){
+        o.removeAttribute('aria-sort');
+        var c = o.querySelector('.caret'); if (c) c.remove();
+      });
+      th.setAttribute('aria-sort', sortDir === 1 ? 'ascending' : 'descending');
+      th.insertAdjacentHTML('beforeend',
+        '<span class="caret"> ' + (sortDir === 1 ? '↑' : '↓') + '</span>');
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
