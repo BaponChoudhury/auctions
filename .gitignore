@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+
+# Scraped output and cached auction-house copy. The descriptions are the auction
+# house's content — keep them local for classification, don't commit or republish.
+data/*.jsonl
+data/*.json
+data/*.html
+probe*.html
