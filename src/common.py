@@ -106,16 +106,19 @@ def classify_status(result_text: str) -> tuple[str, int | None]:
     low = t.lower()
     price = parse_price(t)
 
+    # "unsold" is tested first because it contains "sold": a plain substring test
+    # in the other order files every unsold lot as a sale. SDL happens not to use
+    # the word, but other sources sharing this function do.
+    if re.search(r"re-?entry|\bunsold\b|\bnot sold\b", low):
+        return "unsold", None
     if "sold prior" in low:
         return "sold_prior", price
     if "sold after" in low:
         return "sold_after", price
-    if "sold" in low:
+    if re.search(r"\bsold\b", low):
         return "sold", price
     if "withdrawn" in low:
         return "withdrawn", None
     if "postponed" in low:
         return "postponed", None
-    if "re-entry" in low or "reentry" in low or "unsold" in low or "not sold" in low:
-        return "unsold", None
     return "listed", None

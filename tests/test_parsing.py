@@ -16,6 +16,11 @@ from common import (
     property_type_code,
 )
 from enrich import classify_condition
+from scrape_bondwolfe import (
+    classify_status as bw_status,
+    parse_auction_date,
+    parse_type,
+)
 
 
 # ------------------------------------------------------------------ status ---
@@ -196,3 +201,64 @@ def test_derelict_outbuilding_is_not_a_structural_lot():
 
 def test_genuine_structural_still_fires():
     assert classify_condition("Evidence of subsidence to the main elevation")[0] == "structural"
+
+
+# ------------------------------------------------------- second source: Bond Wolfe ---
+@pytest.mark.parametrize("tag,price,status,hammer", [
+    ("Sold",      "Sold for £57,000",  "sold",       57000),
+    ("Sold",      "Sold for £458,000", "sold",       458000),
+    ("Withdrawn", "Withdrawn",         "withdrawn",  None),
+    ("Postponed", "Postponed",         "postponed",  None),
+    # Real Bond Wolfe string: a genuine sale that publishes no figure.
+    ("", "Sold prior to auction, for an undisclosed amount", "sold_prior", None),
+    # Unsold lots carry NO status tag — the word appears only in the price block.
+    ("", "Unsold Auction: 9th Jul 2026", "unsold", None),
+])
+def test_bondwolfe_status(tag, price, status, hammer):
+    assert bw_status(tag, price) == (status, hammer)
+
+
+def test_unsold_is_not_read_as_sold():
+    """'unsold' contains 'sold'. A substring test in the wrong order files every
+    unsold lot as a sale — it briefly turned 16 unsold lots into sales here."""
+    assert bw_status("", "Unsold")[0] == "unsold"
+    assert classify_status("Unsold")[0] == "unsold"
+    assert classify_status("Re-entry to a future auction")[0] == "unsold"
+
+
+def test_undisclosed_prior_sale_has_no_price():
+    """A figure is only trusted when attached to 'sold for'."""
+    _, hammer = bw_status("", "Sold prior to auction, for an undisclosed amount")
+    assert hammer is None
+
+
+@pytest.mark.parametrize("tagline,code,beds", [
+    ("3 bedroom mid terraced house in Stoke on Trent", "T", 3),
+    ("4 bedroom semi-detached house in Solihull",      "S", 4),
+    ("2 bedroom detached bungalow in Handsworth",      "D", 2),
+    ("1 bedroom flat in Birmingham",                   "F", 1),
+    ("Commercial property in Walsall",                 "O", None),
+])
+def test_bondwolfe_tagline(tagline, code, beds):
+    assert parse_type(tagline) == (code, beds)
+
+
+@pytest.mark.parametrize("text,iso", [
+    ("Auction: 9th Jul 2026",  "2026-07-09"),
+    ("Auction: 1st Feb 2025",  "2025-02-01"),
+    ("Auction: 23rd Oct 2024", "2024-10-23"),
+    ("no date here",           None),
+])
+def test_bondwolfe_auction_date(text, iso):
+    assert parse_auction_date(text) == iso
+
+
+def test_both_sources_emit_the_same_record_shape():
+    """enrich.py and the schema depend on this staying true as sources are added."""
+    import dataclasses
+    from scrape_sdl import LotRecord
+    import scrape_bondwolfe
+    assert scrape_bondwolfe.LotRecord is LotRecord
+    fields = {f.name for f in dataclasses.fields(LotRecord)}
+    assert {"source", "source_lot_id", "address_raw", "postcode", "property_key",
+            "guide_price", "hammer_price", "status", "property_type"} <= fields

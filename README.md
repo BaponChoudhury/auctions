@@ -28,6 +28,44 @@ All data sources are free. No paid APIs.
 4. SERVE      Next.js/Supabase  → the tables above are designed for Supabase Postgres
 ```
 
+## Sources
+
+Single-source data is not a robust basis for market conclusions, so the pipeline
+is built around a shared `LotRecord` shape and one scraper per auction house.
+Two are implemented; a test asserts both emit the identical record shape so the
+schema and `enrich.py` never fork per source.
+
+| Source | Scraper | Events | Lots | Guide | Hammer | Description |
+|---|---|---|---|---|---|---|
+| SDL Property Auctions | `src/scrape_sdl.py` | 33 (2024–2026) | 5,360 | yes | 25% of lots | separate request per lot |
+| Bond Wolfe | `src/scrape_bondwolfe.py` | 52 (2020–2026) | ~175/event | **no** | 56% of lots | on the card |
+
+**These two are not interchangeable, and the differences matter:**
+
+- **Bond Wolfe publishes no guide price on past results.** Any "sold vs guide"
+  figure can only be computed on SDL data. Averaging the two together on that
+  metric produces a number that means nothing.
+- **Hammer-price coverage differs by more than 2×** (25% vs 56%), because SDL has
+  far more "Sold Prior to Auction" lots with undisclosed prices. A naive
+  sell-through comparison between the two houses would be measuring their
+  disclosure policies, not their markets.
+- Bond Wolfe tags lots with condition/tenure badges ("Renovation", "Vacant",
+  "Investment") which are kept verbatim in `result_raw` — a free cross-check on
+  the keyword condition classifier.
+
+Where they agree: postcode ~100%, `property_key` ~70–77%, property type ~88%.
+Those are the fields comps and re-offer tracking depend on, so cross-source
+joins are sound.
+
+### Candidate sources checked
+
+`robots.txt` reviewed for eight UK auction houses on 2026-07-30. None blanket-block
+a generic user-agent. Named AI-crawler blocks (`ClaudeBot`, `GPTBot`, …) exist on
+SDL, Network Auctions and Savills (GPTBot only); Bond Wolfe, Allsop, Pugh and
+Barnett Ross have none. Auction House UK and Clive Emson return 406 for
+`robots.txt` and need a closer look before scraping. Re-check before adding any
+source — `tools/probe_sources.py` does this.
+
 ## How the SDL scraper actually works
 
 Verified against the live site on 2026-07-30. The obvious approach does not work,
@@ -101,7 +139,15 @@ pip install requests beautifulsoup4 psycopg2-binary python-dotenv pytest
 ## Running it
 
 ```bash
-python src/scrape_sdl.py --max-events 3 --out lots.jsonl
+python src/scrape_sdl.py --max-events 0 --out lots.jsonl
+```
+
+```bash
+python src/scrape_bondwolfe.py --max-events 10 --out bondwolfe.jsonl
+```
+
+```bash
+python tools/combine.py data/lots.jsonl data/bondwolfe.jsonl
 ```
 
 ```bash
@@ -155,8 +201,25 @@ get no key rather than a wrong one — matching "169" out of "Land between 169 a
 
 ## Extending
 
-Each auction house needs its own small scraper (Allsop, Bond Wolfe, Auction House UK,
-Pugh all publish results). Keep the output shape identical to `LotRecord` in
-scrape_sdl.py and everything downstream works unchanged. Shared address/price/status
-parsing lives in `src/common.py` — reuse it so `property_key` stays consistent across
-sources, otherwise re-offer tracking and PPD matching silently stop working.
+Each auction house needs its own small scraper. Keep the output shape identical to
+`LotRecord` in scrape_sdl.py and everything downstream works unchanged — there is a
+test asserting this. Shared address/price/status parsing lives in `src/common.py` —
+reuse it so `property_key` stays consistent across sources, otherwise re-offer
+tracking and PPD matching silently stop working.
+
+Both scrapers so far hit the same wall: the visible listing is rendered
+client-side and returns zero lots to a plain HTML parse. In both cases the data
+came from an admin-ajax-style endpoint found by reading the theme's own JS.
+Expect the next source to be the same, and budget for it.
+
+Two traps worth knowing before writing a third scraper, both of which bit here:
+
+1. **A status word can live somewhere other than the status element.** Bond Wolfe
+   unsold lots carry no status tag at all — the word only appears in the price
+   block — so reading the obvious element filed all of them as `listed`.
+2. **`"unsold"` contains `"sold"`.** A substring test in the wrong order files
+   every unsold lot as a sale. Test `unsold` first, or use word boundaries.
+   `tests/test_parsing.py` pins both.
+
+Always score a new source's status vocabulary against a real event before trusting
+it — `tools/check_source.py` prints the distribution and field coverage.
