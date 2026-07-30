@@ -9,3 +9,4 @@ data/*.jsonl
 data/*.json
 data/*.html
 probe*.html
+data/*.py
