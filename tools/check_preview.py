@@ -15,31 +15,37 @@ assert re.search(r"</script\b", raw) is None
 
 print("payload parses OK")
 print("  sold rows   :", len(data["sold"]))
-print("  unsold rows :", len(data["unsold"]))
+print("  repeat rows :", len(data["repeat"]))
 print("  summary keys:", ", ".join(data["summary"]))
 
 # Keys the renderer reads must exist on every row.
-needed = {"address_raw", "postcode", "property_type", "guide_price",
-          "hammer_price", "uplift_pct", "condition", "lot_url"}
-for bucket in ("sold", "unsold"):
+needed = {"source", "address_raw", "postcode", "property_type", "guide_price",
+          "hammer_price", "uplift_pct", "condition", "lot_url", "auction_date"}
+for bucket in ("sold", "repeat"):
     for i, r in enumerate(data[bucket]):
         missing = needed - set(r)
         assert not missing, f"{bucket}[{i}] missing {missing}"
 print("all rows carry every key the renderer reads")
 
 # Every status the chart draws must exist in the summary.
-for k in ("sold_prior", "sold", "unsold", "withdrawn", "postponed", "sold_after"):
+for k in ("sold_prior", "sold", "unsold", "withdrawn", "postponed", "sold_after", "listed"):
     assert k in data["summary"]["status"], f"status {k} missing"
 print("status chart keys present")
 
-# Headline figures quoted in the prose must match the data.
 s = data["summary"]
-assert s["total"] == 224 and s["sold_n"] == 55, (s["total"], s["sold_n"])
-assert len(data["sold"]) == s["sold_n"], "table row count disagrees with headline"
-raised = sum(r["hammer_price"] for r in data["sold"])
-assert raised == s["total_raised"], (raised, s["total_raised"])
-assert abs(raised / 1e6 - 8.69) < 0.01, raised
-print(f"headline figures agree with rows: 224 lots, 55 sold, GBP {raised:,}")
+assert s["total"] == sum(s["sources"].values()), (s["total"], s["sources"])
+assert s["total"] == sum(s["status"].values()), "status counts do not sum to total"
+assert len(s["sources"]) >= 2, "preview claims two sources but data has fewer"
+assert {r["source"] for r in data["sold"]} <= set(s["sources"])
+# The table is a top-N sample, so it must not claim to be the whole set.
+assert len(data["sold"]) <= s["sold_n"]
+print(f"consistent: {s['total']:,} lots, {len(s['sources'])} sources, "
+      f"{s['sold_n']:,} sold, GBP {s['total_raised']:,}")
+
+# The prose hard-codes these; if the data moves, the copy is wrong.
+assert f"{s['total']:,}" in html, "headline total not present in page copy"
+assert str(s["events"]) in html, "event count not present in page copy"
+print("page copy matches the data it describes")
 
 for tag in ("<title>", "</style>", "</script>"):
     assert tag in html, tag

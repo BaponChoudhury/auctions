@@ -11,5 +11,5 @@ out = pathlib.Path(sys.argv[1])
 # newline="" keeps LF endings; the Windows default rewrites them to CRLF.
 with open(out, "w", encoding="utf-8", newline="") as f:
     f.write(tpl.replace("__DATA__", payload))
-print(f"wrote {out} ({out.stat().st_size} bytes, "
-      f"{len(data['sold'])} sold + {len(data['unsold'])} unsold rows)")
+rows = ", ".join(f"{len(v)} {k}" for k, v in data.items() if isinstance(v, list))
+print(f"wrote {out} ({out.stat().st_size} bytes, {rows})")

@@ -124,40 +124,43 @@
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">Pipeline output · live scrape</p>
-    <h1>224 lots from one property auction</h1>
-    <p class="lede">This is real data the scraper pulled from SDL's site — every lot from a
-      single auction, with what each one was guided at and what it actually sold for.</p>
-    <p class="src">SDL Property Auctions · 30 January 2025 · scraped 30 July 2026 · 1 request</p>
+    <p class="eyebrow">Pipeline output · two auction houses</p>
+    <h1>7,160 lots from 42 property auctions</h1>
+    <p class="lede">Real data the pipeline pulled from two UK auction houses — every lot
+      offered, what it sold for, and which properties keep coming back unsold.</p>
+    <p class="src" id="srcline">SDL Property Auctions + Bond Wolfe · Aug 2024 – Jul 2026 · scraped 30 July 2026</p>
   </header>
 
   <section>
     <dl class="tiles">
-      <div><dt>Lots in catalogue</dt><dd>224<span>Everything offered that day</span></dd></div>
-      <div><dt>Sold with a price</dt><dd>55<span>Only these publish a sale figure</span></dd></div>
-      <div><dt>Raised</dt><dd>£8.69m<span>Across those 55 lots</span></dd></div>
-      <div><dt>Median vs guide</dt><dd>+17%<span>52 of 53 beat their guide</span></dd></div>
+      <div><dt>Lots</dt><dd id="tTotal">7,160<span id="tSources">SDL 5,360 · Bond Wolfe 1,800</span></dd></div>
+      <div><dt>Sold with a price</dt><dd id="tSold">2,679<span>37% — the rest disclose nothing</span></dd></div>
+      <div><dt>Hammer total</dt><dd id="tRaised">£422m<span>Median sale £127,500</span></dd></div>
+      <div><dt>Repeat properties</dt><dd id="tRepeat">960<span>Offered at more than one auction</span></dd></div>
     </dl>
   </section>
 
   <section>
-    <h2>What happened to all 224 lots</h2>
+    <h2>What happened to all 7,160 lots</h2>
     <p class="lede" style="font-size:.95rem">Not every lot sells, and not every sale publishes a
       price. This is the part that shapes any analysis built on top.</p>
     <div class="status-list" id="statusList"></div>
-    <p class="note"><strong>Only 55 of 224 lots (25%) publish a sale price.</strong>
-      Another 60 sold <em>before</em> the auction — genuinely sold, but SDL publishes no figure
-      for them. So any "average discount" or "sell-through" number has to say which of these
-      groups it counts, or it quietly means something different from what it sounds like.</p>
+    <p class="note"><strong>Only 37% of lots publish a sale price</strong>, and the two houses
+      differ by more than 2× on this (SDL 28%, Bond Wolfe 64%). Nearly a thousand more sold
+      <em>before</em> the auction with no figure disclosed. Comparing sell-through between the
+      two houses would mostly measure their disclosure policies, not their markets.</p>
+    <p class="note"><strong>Bond Wolfe publishes no guide price on past results at all</strong>,
+      so the "vs guide" column below exists only for SDL lots. Averaging that figure across both
+      sources would produce a number that means nothing.</p>
   </section>
 
   <section>
-    <h2>Every lot that sold with a published price</h2>
+    <h2>The lots</h2>
     <p class="lede" style="font-size:.95rem;margin-bottom:1.1rem">Sortable. Click any address to
       open the original listing.</p>
     <div class="controls">
-      <button type="button" data-filter="sold" aria-pressed="true">Sold (55)</button>
-      <button type="button" data-filter="unsold" aria-pressed="false">Didn't sell (12 shown)</button>
+      <button type="button" data-filter="sold" aria-pressed="true">150 largest sales</button>
+      <button type="button" data-filter="repeat" aria-pressed="false">Repeatedly re-offered</button>
       <span class="count" id="count"></span>
     </div>
     <div class="scroll">
@@ -165,6 +168,7 @@
         <thead>
           <tr>
             <th class="sortable" data-key="address_raw">Address</th>
+            <th class="sortable" data-key="source">House</th>
             <th class="sortable" data-key="property_type">Type</th>
             <th class="sortable num" data-key="guide_price" style="text-align:right">Guide</th>
             <th class="sortable num" data-key="hammer_price" style="text-align:right">Sold for</th>
@@ -196,9 +200,12 @@
   </section>
 
   <footer>
-    <p>One outlier is excluded from the percentage figures: a parcel of land guided at £1 that
-      sold for £100 — real data, but a 9,900% uplift makes any average meaningless. It still
-      appears in the table below its sorted position.</p>
+    <p>Guides under £1,000 are excluded from the percentage figures: one parcel of land was
+      guided at £1 and sold for £100 — real data, but a 9,900% uplift makes any average
+      meaningless. The table shows the 150 largest sales, not all 2,679.</p>
+    <p style="margin-top:.6rem">Bond Wolfe covers 10 of its 51 available past auctions here;
+      SDL covers all 33. 16 properties were offered at <em>both</em> houses, and 271 postcode
+      sectors are covered by both — which is what makes cross-source comparison possible.</p>
     <p style="margin-top:.6rem">Code: <a href="https://github.com/BaponChoudhury/auctions">github.com/BaponChoudhury/auctions</a>
       · Prices and addresses are factual auction results; listing descriptions are not reproduced here.</p>
   </footer>
@@ -209,18 +216,34 @@
 (function(){
   var D = JSON.parse(document.getElementById('payload').textContent);
   var TYPE = {D:'Detached',S:'Semi',T:'Terraced',F:'Flat',O:'Land / other'};
+  var HOUSE = {sdl:'SDL', bondwolfe:'Bond Wolfe'};
   var STATUS = [
-    ['sold_prior','Sold before',    'var(--hold)'],
     ['sold',      'Sold at auction','var(--up)'],
     ['unsold',    "Didn't sell",    'var(--down)'],
+    ['sold_prior','Sold before',    'var(--hold)'],
     ['withdrawn', 'Withdrawn',      'var(--slate)'],
     ['postponed', 'Postponed',      'var(--slate)'],
+    ['listed',    'No result yet',  'var(--slate)'],
     ['sold_after','Sold after',     'var(--up)']
   ];
   var money = function(n){
     if (n === null || n === undefined) return '—';
     return '£' + n.toLocaleString('en-GB');
   };
+  var num = function(n){ return (n||0).toLocaleString('en-GB'); };
+
+  // Headline tiles come from the data, so the copy cannot drift from the rows.
+  var S = D.summary;
+  document.getElementById('tTotal').firstChild.nodeValue = num(S.total);
+  document.getElementById('tSources').textContent =
+    Object.keys(S.sources).map(function(k){ return (HOUSE[k]||k) + ' ' + num(S.sources[k]); }).join(' · ');
+  document.getElementById('tSold').firstChild.nodeValue = num(S.sold_n);
+  document.getElementById('tRaised').firstChild.nodeValue =
+    '£' + Math.round(S.total_raised/1e6) + 'm';
+  document.getElementById('tRepeat').firstChild.nodeValue = num(S.repeat_properties);
+  document.getElementById('srcline').textContent =
+    'SDL Property Auctions + Bond Wolfe · ' + S.date_min + ' to ' + S.date_max +
+    ' · ' + S.events + ' auctions · scraped 30 July 2026';
 
   // status breakdown
   var max = Math.max.apply(null, STATUS.map(function(s){ return D.summary.status[s[0]] || 0; }));
@@ -231,7 +254,7 @@
       s[2] + '"></span></span><span class="n">' + n + '</span></div>';
   }).join('');
 
-  var view = 'sold', sortKey = 'uplift_pct', sortDir = -1;
+  var view = 'sold', sortKey = 'hammer_price', sortDir = -1;
 
   function render(){
     var rows = D[view].slice().sort(function(a,b){
@@ -252,7 +275,8 @@
         : '<span class="dash">—</span>';
       var addr = r.address_raw.replace(/,?\s*[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/,'');
       return '<tr><td class="addr"><a href="' + r.lot_url + '">' + addr + '</a>' +
-        '<div class="pc">' + (r.postcode || '') + '</div></td>' +
+        '<div class="pc">' + (r.postcode || '') + ' · ' + (r.auction_date || '') + '</div></td>' +
+        '<td><span class="pill p-slate">' + (HOUSE[r.source] || r.source) + '</span></td>' +
         '<td>' + (TYPE[r.property_type] || '<span class="dash">—</span>') + '</td>' +
         '<td class="num">' + money(r.guide_price) + '</td>' +
         '<td class="num">' + money(r.hammer_price) + '</td>' +

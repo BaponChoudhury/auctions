@@ -1,52 +1,71 @@
-"""Build a compact JSON summary of a scraped event for the preview page."""
-import json, statistics, sys, collections
+"""Build a compact JSON summary of the scraped corpus for the preview page.
+
+Usage: python preview_data.py ../data/sdl_all.jsonl ../data/bw_all.jsonl
+"""
+import collections, json, statistics, sys
+
 sys.path.insert(0, "../src")
 from enrich import classify_condition
 
-lots = [json.loads(l) for l in open("../data/lots_1267.jsonl", encoding="utf-8")]
-desc = {r["source_lot_id"]: r["description"]
-        for r in json.load(open("../data/sampled.json", encoding="utf-8"))}
+lots = []
+for path in sys.argv[1:]:
+    lots += [json.loads(l) for l in open(path, encoding="utf-8")]
+
+# Descriptions were fetched separately for a sample of SDL lots.
+try:
+    desc = {r["source_lot_id"]: r["description"]
+            for r in json.load(open("../data/sampled.json", encoding="utf-8"))}
+except FileNotFoundError:
+    desc = {}
 
 for l in lots:
-    d = desc.get(l["source_lot_id"], "")
-    l["description"] = d
+    d = l.get("description") or desc.get(l["source_lot_id"], "")
     l["condition"] = classify_condition(d)[0] if d else None
-    if l["hammer_price"] and l["guide_price"]:
-        l["uplift_pct"] = round((l["hammer_price"] - l["guide_price"]) / l["guide_price"] * 100)
-    else:
-        l["uplift_pct"] = None
+    g, h = l.get("guide_price"), l.get("hammer_price")
+    l["uplift_pct"] = round((h - g) / g * 100) if (h and g and g >= 1000) else None
 
 sold = [l for l in lots if l["hammer_price"]]
-# Nominal guides (a land parcel guided at £1 that sold for £100) are real, but a
-# 9,900% uplift makes any percentage aggregate meaningless. Keep the lot, drop it
-# from the ratio stats.
-MIN_GUIDE = 1000
-nominal = [l for l in sold if l["guide_price"] and l["guide_price"] < MIN_GUIDE]
-up = [l["uplift_pct"] for l in sold
-      if l["uplift_pct"] is not None and l["guide_price"] >= MIN_GUIDE]
+up = [l["uplift_pct"] for l in lots if l["uplift_pct"] is not None]
+events = {(l["source"], l["auction_date"]) for l in lots if l["auction_date"]}
+
+# Cross-source signal: the same property offered at more than one auction house.
+seen = collections.defaultdict(set)
+for l in lots:
+    if l["property_key"]:
+        seen[l["property_key"]].add(l["source"])
+reoffers = collections.Counter(l["property_key"] for l in lots if l["property_key"])
 
 summary = {
-    "auction_date": lots[0]["auction_date"],
     "total": len(lots),
+    "sources": dict(collections.Counter(l["source"] for l in lots).most_common()),
+    "events": len(events),
     "status": dict(collections.Counter(l["status"] for l in lots).most_common()),
-    "types": dict(collections.Counter(l["property_type"] for l in lots).most_common()),
     "sold_n": len(sold),
-    "guide_median": int(statistics.median(l["guide_price"] for l in sold)),
     "hammer_median": int(statistics.median(l["hammer_price"] for l in sold)),
-    "uplift_median": int(statistics.median(up)),
-    "uplift_max": max(up),
-    "over_guide": sum(1 for u in up if u > 0),
-    "under_guide": sum(1 for u in up if u < 0),
     "total_raised": sum(l["hammer_price"] for l in sold),
-    "nominal_excluded": len(nominal),
+    "uplift_median": int(statistics.median(up)) if up else None,
+    "uplift_n": len(up),
+    "over_guide": sum(1 for u in up if u > 0),
+    "repeat_properties": sum(1 for n in reoffers.values() if n > 1),
+    "cross_source_properties": sum(1 for v in seen.values() if len(v) > 1),
+    "date_min": min(l["auction_date"] for l in lots if l["auction_date"]),
+    "date_max": max(l["auction_date"] for l in lots if l["auction_date"]),
 }
 print(json.dumps(summary, indent=1))
 
-keep = ("address_raw", "postcode", "postcode_sector", "property_type", "bedrooms",
-        "guide_price", "hammer_price", "uplift_pct", "status", "result_raw",
-        "property_key", "condition", "lot_url")
-rows = sorted(sold, key=lambda l: -(l["uplift_pct"] or -999))
-out = {"summary": summary, "sold": [{k: l[k] for k in keep} for l in rows],
-       "unsold": [{k: l[k] for k in keep} for l in lots if l["status"] == "unsold"][:12]}
+keep = ("source", "address_raw", "postcode", "property_type", "bedrooms", "guide_price",
+        "hammer_price", "uplift_pct", "status", "condition", "lot_url", "auction_date")
+
+
+def slim(rows):
+    return [{k: r.get(k) for k in keep} for r in rows]
+
+
+# Biggest sales carry the story; cap so the page stays light.
+top = sorted(sold, key=lambda l: -l["hammer_price"])[:150]
+repeat = sorted((l for l in lots if reoffers[l["property_key"]] > 2 and l["property_key"]),
+                key=lambda l: (l["property_key"], l["auction_date"] or ""))[:60]
+
+out = {"summary": summary, "sold": slim(top), "repeat": slim(repeat)}
 json.dump(out, open("../data/preview.json", "w", encoding="utf-8"), indent=1)
-print(f"\nwrote {len(out['sold'])} sold + {len(out['unsold'])} unsold rows")
+print(f"\nwrote {len(out['sold'])} sold + {len(out['repeat'])} repeat rows")
