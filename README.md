@@ -39,25 +39,33 @@ schema and `enrich.py` never fork per source.
 
 | Source | Scraper | Events | Lots | Guide | Hammer | Description |
 |---|---|---|---|---|---|---|
-| SDL Property Auctions | `src/scrape_sdl.py` | 33 (2024–2026) | 5,360 | yes | 25% of lots | separate request per lot |
-| Bond Wolfe | `src/scrape_bondwolfe.py` | 52 (2020–2026) | ~175/event | **no** | 56% of lots | on the card |
+| Bond Wolfe | `src/scrape_bondwolfe.py` | 51 | 9,219 | **no** | 71% | on the card |
+| SDL Property Auctions | `src/scrape_sdl.py` | 32 | 5,360 | 99% | 28% | extra request per lot |
+| Allsop | `src/scrape_allsop.py` | 10 | 1,814 | 98% | 53% | in the API response |
 
-**These two are not interchangeable, and the differences matter:**
+**Total: 16,393 lots, 93 auctions, £1.31bn of hammer prices, 55% priced.**
+
+**The sources are not interchangeable, and the differences matter:**
 
 - **Bond Wolfe publishes no guide price on past results.** Any "sold vs guide"
-  figure can only be computed on SDL data. Averaging the two together on that
+  figure can only be computed on SDL and Allsop data. Averaging all three on that
   metric produces a number that means nothing.
-- **Hammer-price coverage differs by more than 2×** (25% vs 56%), because SDL has
-  far more "Sold Prior to Auction" lots with undisclosed prices. A naive
-  sell-through comparison between the two houses would be measuring their
-  disclosure policies, not their markets.
+- **Hammer-price coverage ranges from 28% to 71%.** All three withhold the price
+  on "sold prior/after" lots, but they differ hugely in how many lots sell that
+  way. A naive sell-through comparison between houses measures their disclosure
+  policy, not their markets.
+- **Allsop is the richest source**: guide, sale price and per-lot feature bullets
+  all arrive in one JSON response, so it is the only one that supports condition
+  classification without an extra request per lot. It also runs commercial
+  catalogues alongside residential.
 - Bond Wolfe tags lots with condition/tenure badges ("Renovation", "Vacant",
-  "Investment") which are kept verbatim in `result_raw` — a free cross-check on
-  the keyword condition classifier.
+  "Investment") kept verbatim in `result_raw` — a free cross-check on the keyword
+  condition classifier.
 
-Where they agree: postcode ~100%, `property_key` ~70–77%, property type ~88%.
-Those are the fields comps and re-offer tracking depend on, so cross-source
-joins are sound.
+Where they agree: postcode ~99%, `property_key` 70–83%, property type 88–98%.
+Those are the fields comps and re-offer tracking depend on, so cross-source joins
+are sound: 35 properties appear at more than one house, and 898 postcode sectors
+are covered by more than one source.
 
 ### Candidate sources checked
 
@@ -79,7 +87,7 @@ string. `src/geo.py` resolves postcode → area via postcodes.io (free, OGL, no 
 python src/geo.py --lots data/sdl_all.jsonl data/bw_all.jsonl --to-db
 ```
 
-Current corpus: **4,802 of 4,813 postcodes resolved (99%), across 300 local
+Current corpus: **10,787 of 10,827 postcodes resolved (99%), across 336 local
 authorities.**
 
 This is not cosmetic. `hpi` is keyed by `(area_code, month)` where `area_code` is
@@ -96,16 +104,23 @@ fact, and ~7k lots share ~4.8k postcodes. Join through the `lots_geo` view.
 
 | Region | Sold lots | Median sale |
 |---|---|---|
-| West Midlands | 1,276 | £137,000 |
-| East Midlands | 834 | £125,000 |
-| Yorkshire & Humber | 155 | £83,000 |
-| North West | 133 | £99,000 |
-| North East | 83 | £45,000 |
-| London | 20 | £293,000 |
+| West Midlands | 5,225 | £129,500 |
+| East Midlands | 1,303 | £110,000 |
+| North West | 631 | £70,000 |
+| North East | 596 | £32,500 |
+| Yorkshire & Humber | 417 | £57,500 |
+| London | 257 | £321,000 |
+| South East | 178 | £192,250 |
+| East of England | 137 | £172,000 |
+| South West | 104 | £150,000 |
 
-Note the sample is heavily Midlands-weighted — both auction houses are Midlands-based.
-That is a real selection bias in the corpus, not a fact about the UK auction market,
-and it is the main reason to keep adding sources.
+**Median sale spans £32,500 (North East) to £321,000 (London) — a 9.9× spread.**
+That is the whole argument for per-area HPI adjustment rather than one national index.
+
+The sample is still Midlands-weighted: SDL and Bond Wolfe are both Midlands-based,
+and adding Allsop took London from 20 sold lots to 257 without changing that overall
+shape. Treat national conclusions from this corpus with suspicion until a
+southern-focused house (Clive Emson, Barnett Ross) is added.
 
 ## How the SDL scraper actually works
 
@@ -184,7 +199,11 @@ python src/scrape_sdl.py --max-events 0 --out lots.jsonl
 ```
 
 ```bash
-python src/scrape_bondwolfe.py --max-events 10 --out bondwolfe.jsonl
+python src/scrape_bondwolfe.py --max-events 0 --out bondwolfe.jsonl
+```
+
+```bash
+python src/scrape_allsop.py --max-events 0 --out allsop.jsonl
 ```
 
 ```bash
@@ -253,14 +272,27 @@ client-side and returns zero lots to a plain HTML parse. In both cases the data
 came from an admin-ajax-style endpoint found by reading the theme's own JS.
 Expect the next source to be the same, and budget for it.
 
-Two traps worth knowing before writing a third scraper, both of which bit here:
+Allsop was the exception — a clean JSON API behind a React SPA, found by reading
+the bundle. Check for one before writing HTML parsing.
+
+Traps worth knowing before writing a fourth scraper, all of which bit here:
 
 1. **A status word can live somewhere other than the status element.** Bond Wolfe
    unsold lots carry no status tag at all — the word only appears in the price
    block — so reading the obvious element filed all of them as `listed`.
 2. **`"unsold"` contains `"sold"`.** A substring test in the wrong order files
    every unsold lot as a sale. Test `unsold` first, or use word boundaries.
-   `tests/test_parsing.py` pins both.
+3. **Epoch timestamps may be local midnight, not UTC.** Allsop's `auction_date`
+   is UK-local midnight in epoch ms; read back as UTC it is 23:00 the previous
+   day during BST, so every summer auction landed one day early. Caught by
+   diffing against the dates Allsop publishes on its own index — winter events
+   agreed, every BST event was off by one. A wrong `auction_date` corrupts the
+   `lots` unique key.
+4. **A generic type label can hide the real one.** Allsop's residential catalogue
+   labels most lots a bare `"House"`; the built form is only in the byline. 133 of
+   301 lots in one auction had no usable type until that fallback was added.
+
+`tests/test_parsing.py` pins all four.
 
 Always score a new source's status vocabulary against a real event before trusting
 it — `tools/check_source.py` prints the distribution and field coverage.

@@ -1,0 +1,419 @@
+[
+ {
+  "allsop_lotid": "443026f8-4ec1-11f1-814e-0242ac110002",
+  "version_id": "5254ab1a-6577-11f1-81fb-0242ac110002",
+  "allsop_auctionid": "eb91d024-f848-11f0-a7b9-0242ac110002",
+  "reference": "C260610 078",
+  "net_rent": 0,
+  "current_rent_per_annum": "45000",
+  "current_rent_per_annum_2": null,
+  "current_rent_per_annum_text": "\u00a345,000 p.a.",
+  "current_rent_per_annum_text_2": "\u00a3TBC",
+  "current_rent_per_annum_header_text": "Total Current Rent Reserved",
+  "current_rent_per_annum_header_text_2": "Total Current Rent Reserved",
+  "agency_agreement_received_date": null,
+  "allsop_propertyaddress1": "Victoria Road",
+  "allsop_propertyaddress2": null,
+  "allsop_propertyaddress3": null,
+  "allsop_propertycounty": "Middlesex",
+  "allsop_lotnumber": 1,
+  "lotStatus": "Available",
+  "allsop_lotstatus": "Available",
+  "allsop_name": "C260610 078",
+  "allsop_propertybyline": "Well Located Freehold Shop and Residential Investment",
+  "allsop_propertyname": null,
+  "allsop_propertypostcode": "HA4 0AH",
+  "allsop_propertyregion": null,
+  "allsop_propertytenure": "Freehold",
+  "allsop_propertytenancy": null,
+  "allsop_propertytown": "Ruislip",
+  "allsop_propertytype": [
+   "Retail",
+   "Flat / Block"
+  ],
+  "resi_property_types": [
+   "Flat / Block",
+   "Mixed Use"
+  ],
+  "comm_property_types": [
+   "Retail",
+   "Mixed Use"
+  ],
+  "resi_property_subtypes": [
+   "Flat / Block_Maisonette"
+  ],
+  "comm_property_subtypes": [
+   "Retail_Shop"
+  ],
+  "available_at_price": null,
+  "featured_image_file_id": "e1bfb7fc-5534-11f1-b9d1-0242ac110002",
+  "guide_price_is_reduced": false,
+  "guide_price_text": "\u00a3600,000 - \u00a3650,000",
+  "legal_pack_approved_by": "f49cafd6-50d7-11f0-a944-0242ac110002",
+  "lot_type": "commercial",
+  "rent_notes": null,
+  "live_addendum": "The property to be sold includes a freehold title and an unmerged leasehold title. Please refer to the Special Conditions of Sale and Legal Documents for further information.\n\nThe Deposit is to be held as Stakeholder.",
+  "live_addendum_updated_at": "2026-06-09 13:22:04",
+  "town": "Ruislip",
+  "address1": "Victoria Road",
+  "address2": null,
+  "address3": null,
+  "county": "Middlesex",
+  "postcode": "HA4 0AH",
+  "postcodeArea": "HA4",
+  "region": [
+   "Greater London"
+  ],
+  "location": {
+   "lat": "51.571466320918",
+   "lon": "-0.41181980684251"
+  },
+  "location_shape": {
+   "type": "point",
+   "coordinates": [
+    0,
+    51
+   ]
+  },
+  "auction_date": 1781046000000,
+  "is_commercial": true,
+  "is_residential": true,
+  "catalogue_type": "commercial",
+  "property_tenure": "Freehold",
+  "property_tenancy": "Multi Let",
+  "guide_price_lower": 600000,
+  "guide_price_upper": 650000,
+  "website_price_lower": 650000,
+  "income": 45000,
+  "yield": 7.5,
+  "net_yield": 0,
+  "tenant": "{\"rows\":[{\"address\":\"78\",\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"A term of years from 05.03.2020 to 26.02.2030\\nRent review in the fifth year\\nMutual break option at any time by giving 6 months notice\\nEffectively FR& I by way of contribution\\n(Lease contracted outside the security provisions of the Landlord & Tenant Act 1954)\",\"rent\":\"24000\",\"lessee\":\"Itachio Limited\",\"review\":\"Reversion 2030\",\"accom\":[\"Ground Floor\"],\"7299a474-6e30-1214-0595-58ea4b0130a3\":[\"73.5\"]},{\"lessee\":\"Individuals\",\"accom\":[\"First & Second Floors - 3 bedrooms, Reception room, kitchen and shower room/WC\"],\"lease__tenancy_type\":\"AST\",\"lease\":\"Rolling Tenancy from 15.07.2025.\",\"rent\":\"21000\",\"address\":\"78A\",\"7299a474-6e30-1214-0595-58ea4b0130a3\":[\"72\"]}],\"headers\":[{\"label\":\"Address\",\"key\":\"address\"},{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"dimensions\":\"sq m/sq ft\",\"key\":\"7299a474-6e30-1214-0595-58ea4b0130a3\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "featured": false,
+  "lot_number": 1,
+  "lot_number_text": "1",
+  "property_byline": "Well Located Freehold Shop and Residential Investment",
+  "featured_image_path": "e1bfb7fc-5534-11f1-b9d1-0242ac110002",
+  "lot_status": "Available",
+  "features": [
+   "Comprising a ground shop and self-contained 3 bed maisonette above",
+   "Total accommodation of approx. 145.5 sqm (1,566 sq ft)",
+   "Shop let on a lease expiring 2030",
+   "Prosperous North West London Suburb, close to Ruislip Manor Station (Piccadilly and Metropolitan Lines)",
+   "Occupiers close by include Costa, Superdrug, Post Office and Budgens. ",
+   "VAT is not applicable"
+  ],
+  "carousel_show": false,
+  "type_tenancy": "Commercial Lease,AST",
+  "tenancy_table": "{\"rows\":[{\"address\":\"78\",\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"A term of years from 05.03.2020 to 26.02.2030\\nRent review in the fifth year\\nMutual break option at any time by giving 6 months notice\\nEffectively FR& I by way of contribution\\n(Lease contracted outside the security provisions of the Landlord & Tenant Act 1954)\",\"rent\":\"24000\",\"lessee\":\"Itachio Limited\",\"review\":\"Reversion 2030\",\"accom\":[\"Ground Floor\"],\"7299a474-6e30-1214-0595-58ea4b0130a3\":[\"73.5\"]},{\"lessee\":\"Individuals\",\"accom\":[\"First & Second Floors - 3 bedrooms, Reception room, kitchen and shower room/WC\"],\"lease__tenancy_type\":\"AST\",\"lease\":\"Rolling Tenancy from 15.07.2025.\",\"rent\":\"21000\",\"address\":\"78A\",\"7299a474-6e30-1214-0595-58ea4b0130a3\":[\"72\"]}],\"headers\":[{\"label\":\"Address\",\"key\":\"address\"},{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"dimensions\":\"sq m/sq ft\",\"key\":\"7299a474-6e30-1214-0595-58ea4b0130a3\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "tenancy_table_2": null,
+  "available_at_tick_to_check": false,
+  "primary_marketed_together_lotid": null,
+  "full_address": "78 & 78A Victoria Road, Ruislip, Middlesex, HA4 0AH",
+  "building_name": null,
+  "house_no": "78 & 78A",
+  "show_in_additional_view": true,
+  "lot_created_at": "2026-05-13 12:45:40",
+  "early_lot": null,
+  "allsop_address": "78 & 78A Victoria Road, Ruislip, Middlesex, HA4 0AH",
+  "property_class": "investment",
+  "type": "investment",
+  "department": "COMM",
+  "property_types": [
+   "Retail",
+   "Flat / Block"
+  ],
+  "residential_property_types": [
+   "Flat / Block",
+   "Mixed Use"
+  ],
+  "commercial_property_types": [
+   "Retail",
+   "Mixed Use"
+  ],
+  "residential_property_subtypes": [
+   "Flat / Block_Maisonette"
+  ],
+  "commercial_property_subtypes": [
+   "Retail_Shop"
+  ],
+  "property_created_at": "2026-05-13 12:45:40",
+  "image_file_id": "e1bfb7fc-5534-11f1-b9d1-0242ac110002",
+  "main_byline": "Well Located Freehold Shop and Residential Investment",
+  "price": "\u00a3600,000 - \u00a3650,000",
+  "sort_price": 600000,
+  "price_description": "Guide Price*",
+  "market_from_date": "2026-05-13 12:45:40",
+  "sales_status_websearch": "For Sale",
+  "search_score": null
+ },
+ {
+  "allsop_lotid": "697bc95c-4882-11f1-ba34-0242ac110002",
+  "version_id": "0e2d67da-64d0-11f1-8083-0242ac110002",
+  "allsop_auctionid": "eb91d024-f848-11f0-a7b9-0242ac110002",
+  "reference": "C260610 049",
+  "net_rent": 0,
+  "current_rent_per_annum": "10500",
+  "current_rent_per_annum_2": null,
+  "current_rent_per_annum_text": "\u00a310,500 p.a.",
+  "current_rent_per_annum_text_2": "\u00a3TBC",
+  "current_rent_per_annum_header_text": "Current Gross Rent Reserved",
+  "current_rent_per_annum_header_text_2": "Current Gross Rent Reserved",
+  "agency_agreement_received_date": null,
+  "allsop_propertyaddress1": "Grand Drive",
+  "allsop_propertyaddress2": null,
+  "allsop_propertyaddress3": null,
+  "allsop_propertycounty": null,
+  "allsop_lotnumber": 2,
+  "lotStatus": "Sold",
+  "allsop_lotstatus": "Sold",
+  "allsop_name": "C260610 049",
+  "allsop_propertybyline": "Virtual Freehold Betting Office Investment",
+  "allsop_propertyname": null,
+  "allsop_propertypostcode": "SW20 9NQ",
+  "allsop_propertyregion": null,
+  "allsop_propertytenure": "Leasehold",
+  "allsop_propertytenancy": null,
+  "allsop_propertytown": "London",
+  "allsop_propertytype": [
+   "Retail"
+  ],
+  "resi_property_types": [],
+  "comm_property_types": [
+   "Retail"
+  ],
+  "resi_property_subtypes": [],
+  "comm_property_subtypes": [
+   "Retail_Betting Office"
+  ],
+  "available_at_price": null,
+  "featured_image_file_id": "bcfab8a8-5373-11f1-8971-0242ac110002",
+  "guide_price_is_reduced": false,
+  "guide_price_text": "\u00a3120,000+",
+  "legal_pack_approved_by": "b96dd32c-872d-11eb-a452-0242ac110002",
+  "lot_type": "commercial",
+  "rent_notes": null,
+  "live_addendum": "The Deposit is to be held as Stakeholder\n\nIn the Particulars of Sale and the Schedule of Accommodation and Tenancies, the following amendments apply:\nThe occupational lease is let on a 5 year lease from 10 January 2023\nThe online version was updated 04.06.2026",
+  "live_addendum_updated_at": "2026-06-09 17:50:41",
+  "sale_price": "132000.00",
+  "town": "London",
+  "address1": "Grand Drive",
+  "address2": null,
+  "address3": null,
+  "county": null,
+  "postcode": "SW20 9NQ",
+  "postcodeArea": "SW20",
+  "region": [
+   "Greater London"
+  ],
+  "location": {
+   "lat": "51.392027882956",
+   "lon": "-0.22302441553927"
+  },
+  "location_shape": {
+   "type": "point",
+   "coordinates": [
+    0,
+    51
+   ]
+  },
+  "auction_date": 1781046000000,
+  "is_commercial": true,
+  "is_residential": false,
+  "catalogue_type": "commercial",
+  "property_tenure": "Leasehold",
+  "property_tenancy": "Single Let",
+  "guide_price_lower": 120000,
+  "guide_price_upper": 120000,
+  "website_price_lower": 132000,
+  "income": 10500,
+  "yield": 8.75,
+  "net_yield": "7.81",
+  "tenant": "{\"rows\":[{\"accom\":[\"Ground Floor\"],\"nia\":[\"80.57\"],\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"5 years from 10.01.2023\\nIR&I\",\"lessee\":\"William Hill Organization Limited (1) \\n(t/a William Hill)\",\"rent\":\"10500\",\"review\":\"Reversion 2028\"}],\"headers\":[{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"key\":\"nia\",\"dimensions\":\"sq m/sq ft\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "featured": false,
+  "lot_number": 2,
+  "lot_number_text": "2",
+  "property_byline": "Virtual Freehold Betting Office Investment",
+  "featured_image_path": "bcfab8a8-5373-11f1-8971-0242ac110002",
+  "lot_status": "Sold",
+  "features": [
+   "Comprising a shop let on a 5 year lease expiring January 2028 (no breaks) ",
+   "Arranged over ground floor only let to William Hill Organization Ltd (t/a William Hill) (1) ",
+   "Total accommodation of approx. 80.57 sq m (867 sq ft)",
+   "Well located in established local parade, close to Co-op",
+   "Located in between Motspur Park, South Merton and Raynes Park station ",
+   "VAT is applicable "
+  ],
+  "carousel_show": false,
+  "type_tenancy": "Commercial Lease",
+  "tenancy_table": "{\"rows\":[{\"accom\":[\"Ground Floor\"],\"nia\":[\"80.57\"],\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"5 years from 10.01.2023\\nIR&I\",\"lessee\":\"William Hill Organization Limited (1) \\n(t/a William Hill)\",\"rent\":\"10500\",\"review\":\"Reversion 2028\"}],\"headers\":[{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"key\":\"nia\",\"dimensions\":\"sq m/sq ft\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "tenancy_table_2": null,
+  "available_at_tick_to_check": true,
+  "primary_marketed_together_lotid": null,
+  "full_address": "356 Grand Drive, London, SW20 9NQ",
+  "building_name": null,
+  "house_no": "356",
+  "show_in_additional_view": false,
+  "lot_created_at": "2026-05-05 14:00:37",
+  "early_lot": null,
+  "allsop_address": "356 Grand Drive, London, SW20 9NQ",
+  "property_class": null,
+  "type": null,
+  "department": "COMM",
+  "property_types": [
+   "Retail"
+  ],
+  "residential_property_types": [],
+  "commercial_property_types": [
+   "Retail"
+  ],
+  "residential_property_subtypes": [],
+  "commercial_property_subtypes": [
+   "Retail_Betting Office"
+  ],
+  "property_created_at": "2026-05-05 14:00:37",
+  "image_file_id": "bcfab8a8-5373-11f1-8971-0242ac110002",
+  "main_byline": "Virtual Freehold Betting Office Investment",
+  "price": "\u00a3120,000+",
+  "sort_price": 120000,
+  "price_description": "Guide Price*",
+  "market_from_date": "2026-05-05 14:00:37",
+  "sales_status_websearch": null,
+  "search_score": null
+ },
+ {
+  "allsop_lotid": "e4479330-2930-11f1-bda3-0242ac110002",
+  "version_id": "25527b78-64d3-11f1-9edb-0242ac110002",
+  "allsop_auctionid": "eb91d024-f848-11f0-a7b9-0242ac110002",
+  "reference": "C260610 004",
+  "net_rent": 0,
+  "current_rent_per_annum": "40700",
+  "current_rent_per_annum_2": null,
+  "current_rent_per_annum_text": "\u00a340,700 p.a.",
+  "current_rent_per_annum_text_2": "\u00a3TBC",
+  "current_rent_per_annum_header_text": "Current Rent Reserved",
+  "current_rent_per_annum_header_text_2": "Current Rent Reserved",
+  "agency_agreement_received_date": null,
+  "allsop_propertyaddress1": "Springfield Boulevard",
+  "allsop_propertyaddress2": null,
+  "allsop_propertyaddress3": "Springfield",
+  "allsop_propertycounty": "Buckinghamshire",
+  "allsop_lotnumber": 3,
+  "lotStatus": "Sold",
+  "allsop_lotstatus": "Sold",
+  "allsop_name": "C260610 004",
+  "allsop_propertybyline": "Freehold Convenience Store Investment",
+  "allsop_propertyname": null,
+  "allsop_propertypostcode": "MK6 3JH",
+  "allsop_propertyregion": null,
+  "allsop_propertytenure": "Freehold",
+  "allsop_propertytenancy": null,
+  "allsop_propertytown": "Milton Keynes",
+  "allsop_propertytype": [
+   "Retail"
+  ],
+  "resi_property_types": [],
+  "comm_property_types": [
+   "Retail"
+  ],
+  "resi_property_subtypes": [],
+  "comm_property_subtypes": [
+   "Retail_Convenience Store"
+  ],
+  "available_at_price": null,
+  "featured_image_file_id": "e9c6695c-539d-11f1-8d40-0242ac110002",
+  "guide_price_is_reduced": false,
+  "guide_price_text": "\u00a3500,000+",
+  "legal_pack_approved_by": null,
+  "lot_type": "commercial",
+  "rent_notes": null,
+  "live_addendum": "The Special Conditions of Sale were revised dated 8.6.26.\n\nCompletion date will be six weeks (30 working days) from the date of exchange.",
+  "live_addendum_updated_at": "2026-06-09 17:51:26",
+  "sale_price": "572500.00",
+  "town": "Milton Keynes",
+  "address1": "Springfield Boulevard",
+  "address2": null,
+  "address3": "Springfield",
+  "county": "Buckinghamshire",
+  "postcode": "MK6 3JH",
+  "postcodeArea": "MK6",
+  "region": [
+   "East of England",
+   "South East"
+  ],
+  "location": {
+   "lat": "52.04027",
+   "lon": "-0.7368"
+  },
+  "location_shape": {
+   "type": "point",
+   "coordinates": [
+    0,
+    52
+   ]
+  },
+  "auction_date": 1781046000000,
+  "is_commercial": true,
+  "is_residential": false,
+  "catalogue_type": "commercial",
+  "property_tenure": "Freehold",
+  "property_tenancy": "Single Let",
+  "guide_price_lower": 500000,
+  "guide_price_upper": 500000,
+  "website_price_lower": 572500,
+  "income": 40700,
+  "yield": 8.14,
+  "net_yield": "6.77",
+  "tenant": "{\"rows\":[{\"nia\":[\"241.26\"],\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"15 years from 20.02.2014\\n(Tenant break clause has passed) \\nRent Review on every 5th year\",\"rent\":\"40700\",\"lessee\":\"One Stop Stores Limited (1)\",\"accom\":[\"Ground Floor\"],\"review\":\"Reversion 2029\"}],\"headers\":[{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"key\":\"nia\",\"dimensions\":\"sq m/sq ft\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "featured": false,
+  "lot_number": 3,
+  "lot_number_text": "3",
+  "property_byline": "Freehold Convenience Store Investment",
+  "featured_image_path": "e9c6695c-539d-11f1-8d40-0242ac110002",
+  "lot_status": "Sold",
+  "features": [
+   "Comprises a ground floor convenience store and surrounding landscape",
+   "Let to One Stop Stores Limited ",
+   "On a lease expiring 2029",
+   "Total accommodation of approx. 241.26 sqm (2,597 sq ft) ",
+   "Prominent corner position situated within a predominantly residential area",
+   "Located close to Milton Keynes Central Railway Station",
+   "VAT is applicable"
+  ],
+  "carousel_show": false,
+  "type_tenancy": "Commercial Lease",
+  "tenancy_table": "{\"rows\":[{\"nia\":[\"241.26\"],\"lease__tenancy_type\":\"Commercial Lease\",\"lease\":\"15 years from 20.02.2014\\n(Tenant break clause has passed) \\nRent Review on every 5th year\",\"rent\":\"40700\",\"lessee\":\"One Stop Stores Limited (1)\",\"accom\":[\"Ground Floor\"],\"review\":\"Reversion 2029\"}],\"headers\":[{\"label\":\"Present Lessee\",\"key\":\"lessee\"},{\"label\":\"Accommodation\",\"key\":\"accom\",\"multiple\":true},{\"label\":\"Approx NIA\",\"key\":\"nia\",\"dimensions\":\"sq m/sq ft\",\"hideHeader\":true,\"multiple\":true,\"subtotal\":true,\"total\":true,\"alignment\":\"right\"},{\"label\":\"Lease Details\",\"key\":\"lease\",\"selectable_field\":\"tenancy_type\"},{\"label\":\"Current Rent (PA)\",\"suffix\":\"p.a.\",\"prefix\":\"\u00a3\",\"key\":\"rent\",\"currency\":true,\"total\":true,\"periods\":1,\"rent\":true},{\"label\":\"Next Review / Reversion\",\"key\":\"review\"}]}",
+  "tenancy_table_2": null,
+  "available_at_tick_to_check": true,
+  "primary_marketed_together_lotid": null,
+  "full_address": "41-43 Springfield Boulevard, Springfield, Milton Keynes, Buckinghamshire, MK6 3JH",
+  "building_name": null,
+  "house_no": "41-43",
+  "show_in_additional_view": false,
+  "lot_created_at": "2026-03-26 16:28:59",
+  "early_lot": null,
+  "allsop_address": "41-43 Springfield Boulevard, Springfield, Milton Keynes, Buckinghamshire, MK6 3JH",
+  "property_class": null,
+  "type": null,
+  "department": "COMM",
+  "property_types": [
+   "Retail"
+  ],
+  "residential_property_types": [],
+  "commercial_property_types": [
+   "Retail"
+  ],
+  "residential_property_subtypes": [],
+  "commercial_property_subtypes": [
+   "Retail_Convenience Store"
+  ],
+  "property_created_at": "2026-03-26 16:28:59",
+  "image_file_id": "e9c6695c-539d-11f1-8d40-0242ac110002",
+  "main_byline": "Freehold Convenience Store Investment",
+  "price": "\u00a3500,000+",
+  "sort_price": 500000,
+  "price_description": "Guide Price*",
+  "market_from_date": "2026-03-26 16:28:59",
+  "sales_status_websearch": null,
+  "search_score": null
+ }
+]

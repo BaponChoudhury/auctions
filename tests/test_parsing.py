@@ -22,6 +22,12 @@ from scrape_bondwolfe import (
     parse_type,
 )
 from geo import _shape as geo_shape, lookup as geo_lookup
+from scrape_allsop import (
+    auction_date as allsop_date,
+    classify_status as allsop_status,
+    description as allsop_desc,
+    property_type as allsop_type,
+)
 
 
 # ------------------------------------------------------------------ status ---
@@ -307,12 +313,107 @@ def test_lookup_uses_cache_and_makes_no_request():
     assert out["B20 2JH"]["admin_district_code"] == "E08000025"
 
 
-def test_both_sources_emit_the_same_record_shape():
+def test_all_sources_emit_the_same_record_shape():
     """enrich.py and the schema depend on this staying true as sources are added."""
     import dataclasses
     from scrape_sdl import LotRecord
-    import scrape_bondwolfe
+    import scrape_bondwolfe, scrape_allsop
     assert scrape_bondwolfe.LotRecord is LotRecord
+    assert scrape_allsop.LotRecord is LotRecord
     fields = {f.name for f in dataclasses.fields(LotRecord)}
     assert {"source", "source_lot_id", "address_raw", "postcode", "property_key",
             "guide_price", "hammer_price", "status", "property_type"} <= fields
+
+
+# ------------------------------------------------------------ third source: Allsop ---
+@pytest.mark.parametrize("raw,price,status,hammer", [
+    ("Sold",        "235000.00", "sold",       235000),
+    ("Sold",        "1450000.00", "sold",      1450000),
+    # Allsop publishes sale_price ONLY for lots sold at auction; prior/after
+    # sales carry no figure at all (verified: 21/21 Sold, 0/17 Sold Prior).
+    ("Sold Prior",  None,        "sold_prior", None),
+    ("Sold After",  None,        "sold_after", None),
+    ("Withdrawn",   None,        "withdrawn",  None),
+    # On a PAST auction, "Available" means the lot did not sell.
+    ("Available",   None,        "unsold",     None),
+    ("Unsold",      None,        "unsold",     None),
+])
+def test_allsop_status(raw, price, status, hammer):
+    assert allsop_status(raw, price) == (status, hammer)
+
+
+def test_allsop_unsold_not_swallowed_by_sold():
+    """Same substring trap as Bond Wolfe: 'Unsold' must not match 'Sold'."""
+    assert allsop_status("Unsold", None)[0] == "unsold"
+
+
+def test_allsop_ignores_a_price_on_a_non_sold_status():
+    """If a stale price ever rides along on a withdrawn lot, don't call it a sale."""
+    assert allsop_status("Withdrawn", "500000.00") == ("withdrawn", None)
+
+
+def test_allsop_epoch_millisecond_auction_date():
+    """auction_date is epoch ms at UK-LOCAL midnight, so it must be read in
+    Europe/London. During BST that instant is 23:00Z the PREVIOUS day, and a UTC
+    conversion reported every summer auction one day early — caught by checking
+    against Allsop's own published dates, where winter events agreed and every
+    BST event was off by one. A wrong auction_date corrupts the lots unique key."""
+    # 2026-06-10 00:00 BST == 2026-06-09 23:00 UTC. Allsop publishes 10 June.
+    assert allsop_date({"auction_date": 1781046000000}) == "2026-06-10"
+    assert allsop_date({"auction_date": None}) is None
+    assert allsop_date({}) is None
+
+
+def test_allsop_winter_date_is_unchanged():
+    """Outside BST, UTC and London agree — the fix must not shift those."""
+    # 2026-02-11 00:00 GMT
+    assert allsop_date({"auction_date": 1770768000000}) == "2026-02-11"
+
+
+@pytest.mark.parametrize("lot,code", [
+    ({"residential_property_types": ["Terraced House"]}, "T"),
+    ({"residential_property_types": ["Semi-Detached House"]}, "S"),
+    ({"residential_property_types": ["Flat / Block"]}, "F"),
+    ({"commercial_property_types": ["Retail", "Mixed Use"]}, "O"),
+    ({"allsop_propertytype": ["Office"]}, "O"),
+    ({"commercial_property_types": ["Development", "Motor Trade"]}, "O"),
+    ({"commercial_property_types": ["Ground Rent"]}, "O"),
+    ({}, None),
+])
+def test_allsop_property_type(lot, code):
+    assert allsop_type(lot) == code
+
+
+@pytest.mark.parametrize("byline,code", [
+    ("INVESTMENT - Freehold Mid Terrace House",           "T"),
+    ("VACANT - Freehold End of Terrace House",            "T"),
+    ("INVESTMENT/VACANT - Freehold Semi-Detached Building", "S"),
+    ("VACANT - Freehold Link Detached House",             "D"),
+    ("VACANT - Freehold Self-Contained Flat",             "F"),
+])
+def test_allsop_built_form_falls_back_to_byline(byline, code):
+    """The residential catalogue labels most lots a bare 'House' with no built
+    form — 133 of 301 in one auction — but the byline spells it out. Without
+    this fallback those lots carry no type and drop out of like-for-like comps."""
+    assert allsop_type({"residential_property_types": ["House"],
+                        "main_byline": byline}) == code
+
+
+def test_allsop_specific_label_beats_the_byline():
+    """A real structured label must win; the byline is only a fallback."""
+    assert allsop_type({"residential_property_types": ["Flat / Block"],
+                        "main_byline": "Freehold Mid Terrace House"}) == "F"
+
+
+def test_allsop_generic_house_with_no_byline_stays_unknown():
+    """Guessing a built form we were never told would poison the comp set."""
+    assert allsop_type({"residential_property_types": ["House"]}) is None
+
+
+def test_allsop_description_joins_byline_and_features():
+    lot = {"main_byline": "Freehold Shop and Residential Investment",
+           "features": ["Comprising a ground floor shop", "Requires modernisation"]}
+    d = allsop_desc(lot)
+    assert "Freehold Shop" in d and "Requires modernisation" in d
+    # It has to survive the condition classifier, which is the point of keeping it.
+    assert classify_condition(d)[0] == "full_refurb"

@@ -124,34 +124,34 @@
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">Pipeline output · two auction houses</p>
-    <h1>7,160 lots from 42 property auctions</h1>
-    <p class="lede">Real data the pipeline pulled from two UK auction houses — every lot
+    <p class="eyebrow">Pipeline output · three auction houses</p>
+    <h1>16,393 lots from 94 property auctions</h1>
+    <p class="lede">Real data the pipeline pulled from three UK auction houses — every lot
       offered, what it sold for, and which properties keep coming back unsold.</p>
-    <p class="src" id="srcline">SDL Property Auctions + Bond Wolfe · Aug 2024 – Jul 2026 · scraped 30 July 2026</p>
+    <p class="src" id="srcline">Bond Wolfe + SDL + Allsop · scraped 31 July 2026</p>
   </header>
 
   <section>
     <dl class="tiles">
-      <div><dt>Lots</dt><dd id="tTotal">7,160<span id="tSources">SDL 5,360 · Bond Wolfe 1,800</span></dd></div>
-      <div><dt>Sold with a price</dt><dd id="tSold">2,679<span>37% — the rest disclose nothing</span></dd></div>
-      <div><dt>Hammer total</dt><dd id="tRaised">£422m<span>Median sale £127,500</span></dd></div>
-      <div><dt>Repeat properties</dt><dd id="tRepeat">960<span>Offered at more than one auction</span></dd></div>
+      <div><dt>Lots</dt><dd id="tTotal">16,393<span id="tSources">three auction houses</span></dd></div>
+      <div><dt>Sold with a price</dt><dd id="tSold">9,037<span>55% — the rest disclose nothing</span></dd></div>
+      <div><dt>Hammer total</dt><dd id="tRaised">£1,306m<span>Median sale £116,000</span></dd></div>
+      <div><dt>Repeat properties</dt><dd id="tRepeat">2,008<span>Offered at more than one auction</span></dd></div>
     </dl>
   </section>
 
   <section>
-    <h2>What happened to all 7,160 lots</h2>
+    <h2>What happened to all 16,393 lots</h2>
     <p class="lede" style="font-size:.95rem">Not every lot sells, and not every sale publishes a
       price. This is the part that shapes any analysis built on top.</p>
     <div class="status-list" id="statusList"></div>
-    <p class="note"><strong>Only 37% of lots publish a sale price</strong>, and the two houses
-      differ by more than 2× on this (SDL 28%, Bond Wolfe 64%). Nearly a thousand more sold
-      <em>before</em> the auction with no figure disclosed. Comparing sell-through between the
-      two houses would mostly measure their disclosure policies, not their markets.</p>
+    <p class="note"><strong>55% of lots publish a sale price</strong>, but the three houses range
+      from 28% to 71%. All three withhold the figure on lots sold before or after the auction —
+      1,923 more sold that way with no price disclosed. Comparing sell-through between houses
+      would mostly measure their disclosure policies, not their markets.</p>
     <p class="note"><strong>Bond Wolfe publishes no guide price on past results at all</strong>,
-      so the "vs guide" column below exists only for SDL lots. Averaging that figure across both
-      sources would produce a number that means nothing.</p>
+      so the "vs guide" column below exists only for SDL and Allsop lots. Averaging that figure
+      across all three sources would produce a number that means nothing.</p>
   </section>
 
   <section>
@@ -170,9 +170,7 @@
         <tbody id="regionRows"></tbody>
       </table>
     </div>
-    <p class="note"><strong>Median sale runs from £45,000 in the North East to £293,000 in
-      London — a 6.5× spread.</strong> That is why the pipeline now time-adjusts comps using
-      each lot's own local-authority house-price index rather than one national figure.</p>
+    <p class="note" id="spreadNote"></p>
   </section>
 
   <section>
@@ -224,10 +222,12 @@
   <footer>
     <p>Guides under £1,000 are excluded from the percentage figures: one parcel of land was
       guided at £1 and sold for £100 — real data, but a 9,900% uplift makes any average
-      meaningless. The table shows the 150 largest sales, not all 2,679.</p>
-    <p style="margin-top:.6rem">Bond Wolfe covers 10 of its 51 available past auctions here;
-      SDL covers all 33. 16 properties were offered at <em>both</em> houses, and 271 postcode
-      sectors are covered by both — which is what makes cross-source comparison possible.</p>
+      meaningless. The table shows the 150 largest sales, not all 9,037.</p>
+    <p style="margin-top:.6rem">All three houses' available past auctions are covered: Bond
+      Wolfe 51, SDL 32, Allsop 10. 35 properties were offered at more than one house, and 898
+      postcode sectors are covered by more than one source — which is what makes cross-source
+      comparison possible. The corpus remains Midlands-weighted, because two of the three
+      houses are Midlands-based.</p>
     <p style="margin-top:.6rem">Code: <a href="https://github.com/BaponChoudhury/auctions">github.com/BaponChoudhury/auctions</a>
       · Prices and addresses are factual auction results; listing descriptions are not reproduced here.</p>
   </footer>
@@ -238,7 +238,7 @@
 (function(){
   var D = JSON.parse(document.getElementById('payload').textContent);
   var TYPE = {D:'Detached',S:'Semi',T:'Terraced',F:'Flat',O:'Land / other'};
-  var HOUSE = {sdl:'SDL', bondwolfe:'Bond Wolfe'};
+  var HOUSE = {sdl:'SDL', bondwolfe:'Bond Wolfe', allsop:'Allsop'};
   var STATUS = [
     ['sold',      'Sold at auction','var(--up)'],
     ['unsold',    "Didn't sell",    'var(--down)'],
@@ -280,6 +280,16 @@
   document.getElementById('geoLine').textContent =
     Math.round(S.geo_resolved / S.total * 100) + '% of them, across ' +
     S.districts + ' local authorities';
+  // Written from the data so the quoted spread can never drift from the rows.
+  var byMed = S.regions.slice().sort(function(a, b){ return a.median - b.median; });
+  var lo = byMed[0], hi = byMed[byMed.length - 1];
+  document.getElementById('spreadNote').innerHTML =
+    '<strong>Median sale runs from ' + money(lo.median) + ' in the ' + lo.region +
+    ' to ' + money(hi.median) + ' in ' + hi.region + ' — a ' +
+    (hi.median / lo.median).toFixed(1) + '× spread.</strong> That is why the pipeline ' +
+    "time-adjusts comps using each lot's own local-authority house-price index rather " +
+    'than one national figure.';
+
   var maxR = Math.max.apply(null, S.regions.map(function(r){ return r.n; }));
   document.getElementById('regionRows').innerHTML = S.regions.map(function(r){
     return '<tr><td>' + r.region + '</td>' +

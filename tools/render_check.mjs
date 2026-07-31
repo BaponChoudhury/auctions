@@ -32,7 +32,17 @@ const checks = [
   ["status bars rendered", (status.match(/status-row/g) || []).length === 7],
   ["count label", store.count.textContent === `${n} lots`, store.count.textContent],
   ["money formatted with separators", /£\d{1,3},\d{3}/.test(rows)],
-  ["both auction houses present", rows.includes(">SDL<") && rows.includes(">Bond Wolfe<")],
+  ["all three auction houses present",
+   [">SDL<", ">Bond Wolfe<", ">Allsop<"].every((h) => rows.includes(h))],
+  // The spread sentence is generated from the data — assert it matches the rows.
+  ["regional spread sentence matches the data", (() => {
+    const meds = data.summary.regions.map((r) => r.median);
+    const lo = Math.min(...meds), hi = Math.max(...meds);
+    const t = store.spreadNote.innerHTML;
+    return t.includes("£" + lo.toLocaleString("en-GB")) &&
+           t.includes("£" + hi.toLocaleString("en-GB")) &&
+           t.includes((hi / lo).toFixed(1) + "×");
+  })(), store.spreadNote.innerHTML.replace(/<[^>]+>/g, "").slice(0, 90)],
   ["type label mapped", rows.includes(">Terraced<") || rows.includes(">Land / other<")],
   ["no literal undefined/NaN", !/undefined|NaN/.test(rows)],
   // Headline tiles are written from the data, so they must match it exactly.
