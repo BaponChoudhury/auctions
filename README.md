@@ -37,13 +37,15 @@ is built around a shared `LotRecord` shape and one scraper per auction house.
 Two are implemented; a test asserts both emit the identical record shape so the
 schema and `enrich.py` never fork per source.
 
-| Source | Scraper | Events | Lots | Guide | Hammer | Description |
+| Source | Scraper | Region | Events | Lots | Guide | Hammer |
 |---|---|---|---|---|---|---|
-| Bond Wolfe | `src/scrape_bondwolfe.py` | 51 | 9,219 | **no** | 71% | on the card |
-| SDL Property Auctions | `src/scrape_sdl.py` | 32 | 5,360 | 99% | 28% | extra request per lot |
-| Allsop | `src/scrape_allsop.py` | 10 | 1,814 | 98% | 53% | in the API response |
+| Bond Wolfe | `src/scrape_bondwolfe.py` | Midlands | 51 | 9,219 | **no** | 71% |
+| SDL Property Auctions | `src/scrape_sdl.py` | Midlands/national | 32 | 5,360 | 99% | 28% |
+| Allsop | `src/scrape_allsop.py` | London/national | 10 | 1,814 | 98% | 53% |
+| Clive Emson | `src/scrape_emson.py` | **South East / South West** | 24 | ~4,000 | **no** | ~60% |
 
-**Total: 16,393 lots, 93 auctions, £1.31bn of hammer prices, 55% priced.**
+Clive Emson was added specifically to correct the Midlands bias — it covers Kent,
+Sussex, Surrey, Hampshire, Essex, London and the West Country.
 
 **The sources are not interchangeable, and the differences matter:**
 
@@ -61,6 +63,16 @@ schema and `enrich.py` never fork per source.
 - Bond Wolfe tags lots with condition/tenure badges ("Renovation", "Vacant",
   "Investment") kept verbatim in `result_raw` — a free cross-check on the keyword
   condition classifier.
+- **Clive Emson is the only one that publishes a price for "Sold Prior" lots**
+  (17/17 in the sample). The other three withhold it without exception.
+- **Clive Emson publishes no street address or postcode** on its results pages,
+  only a town-county string and a lat/lon. The postcode is recovered by
+  reverse-geocoding that coordinate (98% coverage, spot-checked correct to 6m
+  against a lot detail page). But with no house number, its lots get **no
+  `property_key` and cannot be matched to Land Registry PPD** unless run with
+  `--with-addresses`, which costs ~28 minutes per auction.
+- **Clive Emson's robots.txt sets `Crawl-Delay: 10`**, so that scraper is
+  deliberately 3× slower than the others. Do not lower it.
 
 Where they agree: postcode ~99%, `property_key` 70–83%, property type 88–98%.
 Those are the fields comps and re-offer tracking depend on, so cross-source joins
@@ -294,6 +306,10 @@ python src/scrape_allsop.py --max-events 0 --out allsop.jsonl
 ```
 
 ```bash
+python src/scrape_emson.py --max-events 0 --out emson.jsonl
+```
+
+```bash
 python tools/combine.py data/lots.jsonl data/bondwolfe.jsonl
 ```
 
@@ -378,8 +394,13 @@ Traps worth knowing before writing a fourth scraper, all of which bit here:
 4. **A generic type label can hide the real one.** Allsop's residential catalogue
    labels most lots a bare `"House"`; the built form is only in the byline. 133 of
    301 lots in one auction had no usable type until that fallback was added.
+5. **The same lot can appear twice in one page.** Clive Emson renders every lot
+   into both a list view and a map view, so a naive count doubles (332 elements
+   for 166 lots). Dedupe on the source's own lot id.
+6. **`Crawl-Delay` is part of robots.txt.** Clive Emson asks for 10 seconds.
+   Honour it per-source rather than using one global delay.
 
-`tests/test_parsing.py` pins all four.
+`tests/test_parsing.py` pins all of these.
 
 Always score a new source's status vocabulary against a real event before trusting
 it — `tools/check_source.py` prints the distribution and field coverage.

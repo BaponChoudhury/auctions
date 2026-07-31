@@ -43,9 +43,10 @@ assert len(data["sold"]) <= s["sold_n"]
 print(f"consistent: {s['total']:,} lots, {len(s['sources'])} sources, "
       f"{s['sold_n']:,} sold, GBP {s['total_raised']:,}")
 
-# The prose hard-codes these; if the data moves, the copy is wrong.
-assert f"{s['total']:,}" in html, "headline total not present in page copy"
-assert str(s["events"]) in html, "event count not present in page copy"
+# Headline, status heading and the disclosure note are all rendered from the data
+# now (render_check verifies the output), so nothing here should be hard-coded.
+assert "priced_by_source" in s, "per-source disclosure rates missing"
+assert set(s["priced_by_source"]) == set(s["sources"]), "disclosure rates out of sync"
 
 # The regional spread sentence is rendered from the data at runtime (render_check
 # verifies the output); here just confirm the inputs are sane.

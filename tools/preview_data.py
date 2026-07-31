@@ -60,6 +60,11 @@ summary = {
     "date_max": max(l["auction_date"] for l in lots if l["auction_date"]),
     "geo_resolved": sum(1 for l in lots if l["region"]),
     "districts": len({l["district"] for l in lots if l["district"]}),
+    # Price-disclosure rate per house — the spread between them is the point.
+    "priced_by_source": {
+        src: round(100 * sum(1 for l in lots if l["source"] == src and l["hammer_price"])
+                   / sum(1 for l in lots if l["source"] == src))
+        for src in {l["source"] for l in lots}},
 }
 
 # Regional breakdown: the reason a single national HPI index was wrong.

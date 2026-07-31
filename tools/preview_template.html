@@ -124,11 +124,11 @@
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">Pipeline output · three auction houses</p>
-    <h1>16,393 lots from 94 property auctions</h1>
-    <p class="lede">Real data the pipeline pulled from three UK auction houses — every lot
+    <p class="eyebrow" id="eyebrow">Pipeline output · four auction houses</p>
+    <h1 id="headline">Lots from UK property auctions</h1>
+    <p class="lede">Real data the pipeline pulled from four UK auction houses — every lot
       offered, what it sold for, and which properties keep coming back unsold.</p>
-    <p class="src" id="srcline">Bond Wolfe + SDL + Allsop · scraped 31 July 2026</p>
+    <p class="src" id="srcline">Bond Wolfe + SDL + Allsop + Clive Emson · scraped 31 July 2026</p>
   </header>
 
   <section>
@@ -141,17 +141,15 @@
   </section>
 
   <section>
-    <h2>What happened to all 16,393 lots</h2>
+    <h2 id="statusHeading">What happened to all the lots</h2>
     <p class="lede" style="font-size:.95rem">Not every lot sells, and not every sale publishes a
       price. This is the part that shapes any analysis built on top.</p>
     <div class="status-list" id="statusList"></div>
-    <p class="note"><strong>55% of lots publish a sale price</strong>, but the three houses range
-      from 28% to 71%. All three withhold the figure on lots sold before or after the auction —
-      1,923 more sold that way with no price disclosed. Comparing sell-through between houses
-      would mostly measure their disclosure policies, not their markets.</p>
-    <p class="note"><strong>Bond Wolfe publishes no guide price on past results at all</strong>,
+    <p class="note" id="priceNote"></p>
+    <p class="note"><strong>Bond Wolfe and Clive Emson publish no guide price on past results</strong>,
       so the "vs guide" column below exists only for SDL and Allsop lots. Averaging that figure
-      across all three sources would produce a number that means nothing.</p>
+      across all four sources would produce a number that means nothing. Clive Emson is also the
+      only house that discloses a price for lots sold <em>before</em> the auction.</p>
   </section>
 
   <section>
@@ -223,11 +221,11 @@
     <p>Guides under £1,000 are excluded from the percentage figures: one parcel of land was
       guided at £1 and sold for £100 — real data, but a 9,900% uplift makes any average
       meaningless. The table shows the 150 largest sales, not all 9,037.</p>
-    <p style="margin-top:.6rem">All three houses' available past auctions are covered: Bond
-      Wolfe 51, SDL 32, Allsop 10. 35 properties were offered at more than one house, and 898
-      postcode sectors are covered by more than one source — which is what makes cross-source
-      comparison possible. The corpus remains Midlands-weighted, because two of the three
-      houses are Midlands-based.</p>
+    <p style="margin-top:.6rem">Every available past auction is covered for all four houses:
+      Bond Wolfe 51, SDL 32, Clive Emson 24, Allsop 10. Clive Emson was added specifically to
+      correct a Midlands bias — it covers Kent, Sussex, Surrey, Hampshire, Essex and the West
+      Country. Its results pages carry no street address, so its postcodes are recovered by
+      reverse-geocoding the map coordinate, and its lots cannot be matched to Land Registry.</p>
     <p style="margin-top:.6rem">Code: <a href="https://github.com/BaponChoudhury/auctions">github.com/BaponChoudhury/auctions</a>
       · Prices and addresses are factual auction results; listing descriptions are not reproduced here.</p>
   </footer>
@@ -238,7 +236,7 @@
 (function(){
   var D = JSON.parse(document.getElementById('payload').textContent);
   var TYPE = {D:'Detached',S:'Semi',T:'Terraced',F:'Flat',O:'Land / other'};
-  var HOUSE = {sdl:'SDL', bondwolfe:'Bond Wolfe', allsop:'Allsop'};
+  var HOUSE = {sdl:'SDL', bondwolfe:'Bond Wolfe', allsop:'Allsop', emson:'Clive Emson'};
   var STATUS = [
     ['sold',      'Sold at auction','var(--up)'],
     ['unsold',    "Didn't sell",    'var(--down)'],
@@ -256,6 +254,14 @@
 
   // Headline tiles come from the data, so the copy cannot drift from the rows.
   var S = D.summary;
+  // Headline and status heading are written from the data too, so adding a
+  // source can never leave a stale number in the prose.
+  document.getElementById('headline').textContent =
+    num(S.total) + ' lots from ' + num(S.events) + ' property auctions';
+  document.getElementById('eyebrow').textContent =
+    'Pipeline output · ' + Object.keys(S.sources).length + ' auction houses';
+  document.getElementById('statusHeading').textContent =
+    'What happened to all ' + num(S.total) + ' lots';
   document.getElementById('tTotal').firstChild.nodeValue = num(S.total);
   document.getElementById('tSources').textContent =
     Object.keys(S.sources).map(function(k){ return (HOUSE[k]||k) + ' ' + num(S.sources[k]); }).join(' · ');
@@ -275,6 +281,17 @@
       '<span class="track"><span class="fill" style="width:' + (n/max*100) + '%;background:' +
       s[2] + '"></span></span><span class="n">' + n + '</span></div>';
   }).join('');
+
+  // Price-disclosure note, written from the data.
+  var pr = S.priced_by_source || {};
+  var rates = Object.keys(pr).map(function(k){ return pr[k]; });
+  document.getElementById('priceNote').innerHTML =
+    '<strong>' + Math.round(S.sold_n / S.total * 100) + '% of lots publish a sale price</strong>, ' +
+    'but the ' + Object.keys(S.sources).length + ' houses range from ' +
+    Math.min.apply(null, rates) + '% to ' + Math.max.apply(null, rates) + '%. ' +
+    'All of them withhold the figure on at least some lots sold before or after the auction — ' +
+    num(S.status.sold_prior || 0) + ' more sold that way. Comparing sell-through between houses ' +
+    'would mostly measure their disclosure policies, not their markets.';
 
   // Regional breakdown
   document.getElementById('geoLine').textContent =

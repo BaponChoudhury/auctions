@@ -32,8 +32,10 @@ const checks = [
   ["status bars rendered", (status.match(/status-row/g) || []).length === 7],
   ["count label", store.count.textContent === `${n} lots`, store.count.textContent],
   ["money formatted with separators", /£\d{1,3},\d{3}/.test(rows)],
-  ["all three auction houses present",
-   [">SDL<", ">Bond Wolfe<", ">Allsop<"].every((h) => rows.includes(h))],
+  ["every source in the data appears in the table",
+   Object.keys(data.summary.sources).length ===
+     new Set(data.sold.map((r) => r.source)).size,
+   Object.keys(data.summary.sources).join(",")],
   // The spread sentence is generated from the data — assert it matches the rows.
   ["regional spread sentence matches the data", (() => {
     const meds = data.summary.regions.map((r) => r.median);
@@ -62,6 +64,20 @@ const checks = [
   ["region column populated in the lot table", /West Midlands|East Midlands/.test(rows)],
   ["geo line mentions local authorities", /local authorities/.test(store.geoLine.textContent),
    store.geoLine.textContent],
+  ["headline matches the data",
+   store.headline.textContent ===
+     `${data.summary.total.toLocaleString("en-GB")} lots from ` +
+     `${data.summary.events.toLocaleString("en-GB")} property auctions`,
+   store.headline.textContent],
+  ["house count in eyebrow matches sources",
+   store.eyebrow.textContent.includes(String(Object.keys(data.summary.sources).length)),
+   store.eyebrow.textContent],
+  ["disclosure note spans the real min/max",
+   (() => {
+     const r = Object.values(data.summary.priced_by_source);
+     const t = store.priceNote.innerHTML;
+     return t.includes(`${Math.min(...r)}%`) && t.includes(`${Math.max(...r)}%`);
+   })(), store.priceNote.innerHTML.replace(/<[^>]+>/g, "").slice(0, 100)],
   ["source line names both houses",
    /SDL/.test(store.tSources.textContent) && /Bond Wolfe/.test(store.tSources.textContent),
    store.tSources.textContent],

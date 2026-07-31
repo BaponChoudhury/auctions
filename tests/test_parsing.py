@@ -23,6 +23,11 @@ from scrape_bondwolfe import (
 )
 from geo import _shape as geo_shape, lookup as geo_lookup
 from ppd_match import candidates, paon_number
+from scrape_emson import (
+    classify_status as emson_status,
+    parse_price as emson_price,
+    property_type as emson_type,
+)
 from scrape_allsop import (
     auction_date as allsop_date,
     classify_status as allsop_status,
@@ -380,13 +385,64 @@ def test_ppd_match_needs_an_auction_date():
     assert candidates(lot, {"DE14 2EG": [_sale(72000, "2025-02-27")]}, 0, 90) == []
 
 
+# ----------------------------------------------- fourth source: Clive Emson ---
+@pytest.mark.parametrize("raw,status", [
+    ("Sold",            "sold"),
+    ("Sold Prior",      "sold_prior"),
+    ("Sold After",      "sold_after"),
+    ("Withdrawn After", "withdrawn"),
+    ("UNSOLD",          "unsold"),
+    ("Postponed",       "postponed"),
+    # Their wording for a lot rolled into the next sale.
+    ("AVAILABLE IN OUR SEPTEMBER AUCTION", "unsold"),
+    ("AVAILABLE IN OUR MAY AUCTION",       "unsold"),
+])
+def test_emson_status(raw, status):
+    assert emson_status(raw) == status
+
+
+def test_emson_unsold_not_swallowed_by_sold():
+    """Third source, same substring trap: 'UNSOLD' must not match 'Sold'."""
+    assert emson_status("UNSOLD") == "unsold"
+
+
+def test_emson_withdrawn_after_is_not_a_sale():
+    """'Withdrawn After' contains 'After'; it must not become sold_after."""
+    assert emson_status("Withdrawn After") == "withdrawn"
+
+
+@pytest.mark.parametrize("raw,price", [
+    ("275,000", 275000),
+    ("98,000", 98000),
+    ("", None),
+    (None, None),
+])
+def test_emson_price(raw, price):
+    assert emson_price(raw) == price
+
+
+@pytest.mark.parametrize("heading,code", [
+    ("NEARLY 27 ACRES OF WOODLAND",                "O"),
+    ("FREEHOLD GROUND RENTS",                      "O"),
+    ("ELEVEN GARAGES WITH LAND IN RESIDENTIAL AREA", "O"),
+    ("MID-TERRACE HOUSE FOR IMPROVEMENT",          "T"),
+    ("SEMI-DETACHED HOUSE",                        "S"),
+    ("GROUND FLOOR FLAT",                          "F"),
+    # A house with no stated built form: guessing would poison the comp set.
+    ("FOUR-BEDROOM HOUSE FOR IMPROVEMENT",         None),
+])
+def test_emson_property_type(heading, code):
+    assert emson_type(heading) == code
+
+
 def test_all_sources_emit_the_same_record_shape():
     """enrich.py and the schema depend on this staying true as sources are added."""
     import dataclasses
     from scrape_sdl import LotRecord
-    import scrape_bondwolfe, scrape_allsop
+    import scrape_bondwolfe, scrape_allsop, scrape_emson
     assert scrape_bondwolfe.LotRecord is LotRecord
     assert scrape_allsop.LotRecord is LotRecord
+    assert scrape_emson.LotRecord is LotRecord
     fields = {f.name for f in dataclasses.fields(LotRecord)}
     assert {"source", "source_lot_id", "address_raw", "postcode", "property_key",
             "guide_price", "hammer_price", "status", "property_type"} <= fields
