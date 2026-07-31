@@ -67,6 +67,30 @@ Those are the fields comps and re-offer tracking depend on, so cross-source join
 are sound: 35 properties appear at more than one house, and 898 postcode sectors
 are covered by more than one source.
 
+### Aggregators (underthehammer.com) — assessed, not used
+
+`tools/assess_underthehammer.py` records the check. Aggregators look attractive
+(many houses, one integration) but this one has **no robots-permitted route to
+the lot data for our own bot**:
+
+- robots.txt allows `/properties`, `/property/`, `/auctions` for `User-agent: *`
+  but **disallows `/api/`** for what it calls "regular crawlers".
+- Those allowed pages are client-rendered shells — 57–70 characters of text, zero
+  prices, no lot fields in the payload. Everything comes from `/api/`.
+- `sitemap.xml` has 131 entries and **no lot pages**.
+- Their terms-of-use and acceptable-use-policy are themselves served from
+  `/api/`, so the document that should decide this could not be read.
+- They *do* explicitly welcome named AI crawlers — `GPTBot`, `ChatGPT-User`,
+  `Claude-Web`, `anthropic-ai`, `Google-Extended` — and grant those `/api/ai/`.
+  That allowance is for those agents, not for this pipeline's bot, and spoofing
+  one of those user-agents to claim it would be dishonest.
+
+Beyond permissions: an aggregator's value *is* its compiled database, which
+attracts UK database right far more strongly than the individual facts published
+on an originating auction house's own site. The houses are reachable directly —
+fresher, and with no intermediary terms. If aggregator data is wanted, ask them
+(they publish a `/products` page); do not scrape it.
+
 ### Candidate sources checked
 
 `robots.txt` reviewed for eight UK auction houses on 2026-07-30. None blanket-block
