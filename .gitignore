@@ -12,3 +12,5 @@ probe*.html
 data/*.py
 tools/*.html
 !tools/preview_template.html
+data/ppd/
+data/*.csv

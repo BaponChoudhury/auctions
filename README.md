@@ -76,6 +76,69 @@ Barnett Ross have none. Auction House UK and Clive Emson return 406 for
 `robots.txt` and need a closer look before scraping. Re-check before adding any
 source — `tools/probe_sources.py` does this.
 
+## Recovering missing sale prices from Land Registry
+
+Auction houses publish a price only for lots sold **at** auction — never for
+"sold prior" or "sold after". That is ~45% of sold lots with no figure. But every
+completed residential sale in England & Wales is registered, so the price can be
+recovered by matching a lot to its PPD transaction on
+**postcode + house number (PAON) + a completion date shortly after the auction**.
+
+```bash
+python tools/ppd_download.py 2019 2020 2021 2022 2023 2024 2025 2026
+```
+
+```bash
+python src/ppd_match.py --lots "data/*.jsonl" --validate --out data/matched.jsonl
+```
+
+**It works, and it is measurably accurate.** Validated against the 5,288 lots
+where the hammer price *is* published:
+
+| | |
+|---|---|
+| Exact price match | **4,980 (94%)** |
+| Within £1,000 | 5,030 (95%) |
+| Median difference | **£0** |
+| Completion lag after auction | median 29 days (p10 22, p90 56) |
+
+Result on the current corpus: **6,652 lots matched, 811 new auction prices
+recovered** where none was published, plus 553 later private sales of lots that
+did *not* sell at auction.
+
+### The window was chosen from evidence, not assumption
+
+`tools/ppd_sweep.py` scores each window against the known hammer prices:
+
+| Window | Matched | Exact |
+|---|---|---|
+| −30 to +120 days | 2,395 | 78% |
+| 0 to +120 days | 2,272 | **92%** |
+| 0 to +90 days | 2,227 | 93% |
+| 0 to +45 days | 1,846 | 97% |
+
+A pre-auction window is almost pure false positives: it matches **the previous
+owner's purchase**, which skewed matched prices low by a median of £10,000.
+Default is now `0..+90`.
+
+### Limits, all measured rather than assumed
+
+- **Registration lag is the dominant limit.** PPD currently reaches 2026-06-30
+  and the last month or two is always partial. Match rate on sold lots by auction
+  month: 62% (Jul 2025) → 25% (Jan 2026) → 3% (May 2026) → **0% (Jun–Jul 2026)**.
+  This is why Allsop matches at only 14% — all ten of its auctions are 2026.
+  **PPD backfills history; it cannot price a recent auction.**
+- **Residential only.** Commercial lots never appear: 22% match for land/commercial
+  versus 73% for Bond Wolfe residential.
+- **England & Wales only.** Scottish lots can never match.
+- **Needs a house number.** Named buildings and land parcels have no PAON number.
+  Flats often need a SAON the matcher does not yet use — Allsop flats match at 4%.
+- A match on a lot that did **not** sell at auction is a later private sale, not
+  an auction result. Those are labelled `recovered_kind = "later_sale"` and must
+  never be read as a hammer price.
+- 178 matches had more than one candidate sale in the window; they are flagged
+  `recovered_ambiguous`.
+
 ## Geography
 
 The scrapers record a **postcode** (99% coverage) and derive a **postcode sector**,

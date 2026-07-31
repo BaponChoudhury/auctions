@@ -22,6 +22,7 @@ from scrape_bondwolfe import (
     parse_type,
 )
 from geo import _shape as geo_shape, lookup as geo_lookup
+from ppd_match import candidates, paon_number
 from scrape_allsop import (
     auction_date as allsop_date,
     classify_status as allsop_status,
@@ -311,6 +312,72 @@ def test_lookup_uses_cache_and_makes_no_request():
 
     out = geo_lookup(["B20 2JH"], cache=cache, session=Boom(), verbose=False)
     assert out["B20 2JH"]["admin_district_code"] == "E08000025"
+
+
+# --------------------------------------------------- Land Registry PPD matching ---
+@pytest.mark.parametrize("paon,number", [
+    ("44", "44"),
+    # PPD's PAON is not always a bare number.
+    ("LIME COURT, 114", "114"),
+    ("21A", "21a"),
+    ("THE OLD RECTORY", None),
+    ("", None),
+])
+def test_paon_number(paon, number):
+    assert paon_number(paon) == number
+
+
+def _sale(price, d, paon="12"):
+    return {"price": price, "date": d, "paon": paon,
+            "paon_no": paon_number(paon), "saon": "", "type": "T"}
+
+
+LOT = {"postcode": "DE14 2EG", "address_raw": "12 Byrkley Street, Burton DE14 2EG",
+       "auction_date": "2025-01-30"}
+
+
+def test_ppd_match_finds_the_completion_after_the_auction():
+    idx = {"DE14 2EG": [_sale(72000, "2025-02-27")]}
+    hits = candidates(LOT, idx, before=0, after=90)
+    assert len(hits) == 1
+    assert hits[0]["price"] == 72000
+    assert hits[0]["lag_days"] == 28
+
+
+def test_ppd_match_excludes_the_previous_owners_purchase():
+    """A sale completing BEFORE the auction is the previous owner buying, not
+    the auction result. Allowing a 30-day pre-window dropped exact price
+    agreement from 92% to 78% and skewed matches low by a median of £10,000."""
+    idx = {"DE14 2EG": [_sale(45000, "2025-01-02")]}
+    assert candidates(LOT, idx, before=0, after=90) == []
+
+
+def test_ppd_match_excludes_a_different_house_in_the_same_postcode():
+    idx = {"DE14 2EG": [_sale(72000, "2025-02-27", paon="14")]}
+    assert candidates(LOT, idx, before=0, after=90) == []
+
+
+def test_ppd_match_excludes_sales_beyond_the_window():
+    idx = {"DE14 2EG": [_sale(72000, "2025-08-30")]}
+    assert candidates(LOT, idx, before=0, after=90) == []
+
+
+def test_ppd_match_prefers_the_closest_completion():
+    idx = {"DE14 2EG": [_sale(90000, "2025-04-20"), _sale(72000, "2025-02-27")]}
+    hits = candidates(LOT, idx, before=0, after=90)
+    assert len(hits) == 2 and hits[0]["price"] == 72000
+
+
+def test_ppd_match_needs_a_house_number():
+    """Named buildings and land parcels have no PAON number to match on, and
+    guessing one would attach a stranger's sale price to the lot."""
+    lot = {**LOT, "address_raw": "The Old Butchers Shop, Main Street"}
+    assert candidates(lot, {"DE14 2EG": [_sale(72000, "2025-02-27")]}, 0, 90) == []
+
+
+def test_ppd_match_needs_an_auction_date():
+    lot = {**LOT, "auction_date": None}
+    assert candidates(lot, {"DE14 2EG": [_sale(72000, "2025-02-27")]}, 0, 90) == []
 
 
 def test_all_sources_emit_the_same_record_shape():
