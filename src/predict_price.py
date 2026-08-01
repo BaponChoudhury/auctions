@@ -46,15 +46,24 @@ def report(rows):
 
 CAT = ["source", "property_type", "region", "district", "condition"]
 NUM = ["guide_price", "bedrooms", "comp_median", "comp_count", "comp_iqr",
-       "flag_tenanted", "flag_hmo", "flag_land"]
+       "flag_tenanted", "flag_hmo", "flag_land",
+       # EPC: floor area, and the comp expressed per square metre. The model is
+       # ~94% driven by comp_median, so sharpening that one feature is where the
+       # remaining accuracy is most likely to be.
+       "floor_area_m2", "comp_per_m2"]
 
 
 def prep(df, use_guide):
-    cols = NUM if use_guide else [c for c in NUM if c != "guide_price"]
+    cols = [c for c in NUM if c in df.columns]
+    if not use_guide:
+        cols = [c for c in cols if c != "guide_price"]
     X = df[cols].apply(pd.to_numeric, errors="coerce").copy()
     for c in CAT:
-        X[c] = df[c].astype("category")
-    return X, cols + CAT
+        if c in df.columns:
+            X[c] = df[c].astype("category")
+    # A column with no variation breaks the histogram binner and carries nothing.
+    usable = [c for c in X.columns if X[c].nunique(dropna=True) >= 2]
+    return X[usable], usable
 
 
 def run(df, label, use_guide, split_date):
@@ -81,8 +90,8 @@ def run(df, label, use_guide, split_date):
     score("baseline: global median", y_te,
           np.full(len(y_te), np.median(y_tr), dtype=float), rows)
 
-    X_tr, _ = prep(train, use_guide)
-    X_te, _ = prep(test, use_guide)
+    X_tr, cols = prep(train, use_guide)
+    X_te = prep(test, use_guide)[0].reindex(columns=cols)
     # Log target: prices are lognormal and this stops £2m lots dominating.
     model = HistGradientBoostingRegressor(
         max_iter=400, learning_rate=0.06, max_depth=6,

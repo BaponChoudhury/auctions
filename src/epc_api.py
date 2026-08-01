@@ -25,6 +25,7 @@ it would land in your shell history).
 """
 
 import argparse
+import collections
 import glob
 import json
 import os
@@ -129,16 +130,19 @@ def main() -> None:
                 pathlib.Path(r"C:\Users\bapon\autoPosting\.env")):
         if env.exists():
             load_dotenv(env)
-    token = os.environ.get("EPC_BEARER_TOKEN")
+    # An EPC_KEY issued by the OLD service still works as a bearer token on the
+    # new API — verified against /api/domestic/search, which returns 200 and real
+    # certificates for it. The email half is not used at all any more: sending
+    # base64(email:key), or the old Basic scheme, is rejected with 403 "Bad
+    # authentication header". So an existing key needs no re-registration.
+    token = os.environ.get("EPC_BEARER_TOKEN") or os.environ.get("EPC_KEY")
     if not token:
         sys.exit(
-            "EPC_BEARER_TOKEN is not set.\n"
-            "  1. Sign in at https://get-energy-performance-data.communities.gov.uk/\n"
-            "     (GOV.UK One Login)\n"
-            "  2. Copy the bearer token from your 'my account' page\n"
-            "  3. Put it in .env as:  EPC_BEARER_TOKEN=...\n"
-            "Note: the old EPC_EMAIL/EPC_KEY pair is for the API retired on "
-            "30 May 2026 and no longer works.")
+            "No EPC credential found. Set either in .env:\n"
+            "  EPC_KEY=...            (a key from the old service still works)\n"
+            "  EPC_BEARER_TOKEN=...   (from your account page on the new service:\n"
+            "                          https://get-energy-performance-data"
+            ".communities.gov.uk/)")
 
     lots = []
     for pattern in args.lots:
@@ -157,6 +161,16 @@ def main() -> None:
     cache = json.loads(out_path.read_text(encoding="utf-8")) if out_path.exists() else {}
     client = EpcClient(token)
 
+    # A postcode holds ~55 certificates but a lot needs exactly one — the
+    # certificate whose house number matches. Fetching them all would be ~437,000
+    # requests (6 hours); fetching only matches is ~16,000 (about 15 minutes).
+    wanted = collections.defaultdict(set)
+    for l in lots:
+        pc = (l.get("postcode") or "").upper()
+        hn = house_number(l.get("address_raw", ""))
+        if pc and hn:
+            wanted[pc].add(hn)
+
     done = 0
     for i, pc in enumerate(postcodes, 1):
         if pc in cache:
@@ -166,22 +180,32 @@ def main() -> None:
         except requests.RequestException as e:
             print(f"  ! {pc}: {e}", file=sys.stderr)
             continue
+
+        targets = wanted.get(pc, set())
         entries = []
         for c in certs:
-            num = c.get("certificateNumber")
-            full = client.certificate(num) if num else None
-            entries.append({
-                "certificate": num,
-                "address": address_of(c),
-                "house_no": house_number(address_of(c)),
+            addr = address_of(c)
+            hn = house_number(addr)
+            entry = {
+                "certificate": c.get("certificateNumber"),
+                "address": addr,
+                "house_no": hn,
                 "uprn": c.get("uprn"),
                 "rating": c.get("currentEnergyEfficiencyBand"),
                 "registered": c.get("registrationDate"),
-                "floor_area_m2": _num(_find(full, FLOOR_KEY)) if full else None,
-                "age_band": _find(full, AGE_KEY) if full else None,
-                "built_form": _find(full, FORM_KEY) if full else None,
-                "epc_property_type": _find(full, TYPE_KEY) if full else None,
-            })
+                "floor_area_m2": None, "age_band": None,
+                "built_form": None, "epc_property_type": None,
+            }
+            # Only the full certificate carries floor area, so only pay for it
+            # where this certificate could actually belong to one of our lots.
+            if hn and hn in targets and entry["certificate"]:
+                full = client.certificate(entry["certificate"])
+                if full:
+                    entry["floor_area_m2"] = _num(_find(full, FLOOR_KEY))
+                    entry["age_band"] = _find(full, AGE_KEY)
+                    entry["built_form"] = _find(full, FORM_KEY)
+                    entry["epc_property_type"] = _find(full, TYPE_KEY)
+            entries.append(entry)
         cache[pc] = entries
         done += 1
         if done % 50 == 0:

@@ -21,9 +21,35 @@ import sys
 from datetime import date, timedelta
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
+from common import house_number
 from enrich import classify_condition
 from geo import load_cache
 from ppd_match import C_DATE, C_PAON, C_POSTCODE, C_PRICE, C_TYPE, PPD_DIR
+
+EPC_CACHE = pathlib.Path(__file__).parent.parent / "data" / "epc_cache.json"
+
+
+def load_epc() -> dict:
+    """postcode -> {house_no: certificate} for the lots we enriched."""
+    if not EPC_CACHE.exists():
+        print("no EPC cache — floor area columns will be empty", file=sys.stderr)
+        return {}
+    raw = json.loads(EPC_CACHE.read_text(encoding="utf-8"))
+    out = {}
+    for pc, certs in raw.items():
+        by_no = {}
+        for c in certs:
+            if not (c.get("house_no") and c.get("floor_area_m2")):
+                continue
+            prev = by_no.get(c["house_no"])
+            # Most recently registered certificate wins.
+            if not prev or (c.get("registered") or "") > (prev.get("registered") or ""):
+                by_no[c["house_no"]] = c
+        if by_no:
+            out[pc] = by_no
+    print(f"EPC: {sum(len(v) for v in out.values()):,} certificates with floor area "
+          f"across {len(out):,} postcodes", file=sys.stderr)
+    return out
 
 
 def sector_of(postcode: str) -> str | None:
@@ -99,6 +125,7 @@ def main() -> None:
     print(f"lots: {len(lots):,}", file=sys.stderr)
 
     geo = load_cache()
+    epc = load_epc()
     sectors = {sector_of(l.get("postcode") or "") for l in lots}
     sectors.discard(None)
     idx = load_ppd_by_sector(sectors)
@@ -112,6 +139,9 @@ def main() -> None:
         g = geo.get(l.get("postcode") or "") or {}
         cond, flags = classify_condition(l.get("description") or "")
         med, n, iqr = neighbourhood(idx, sec, l.get("property_type"), l["auction_date"])
+        cert = (epc.get((l.get("postcode") or "").upper(), {})
+                .get(house_number(l.get("address_raw", "")) or ""))
+        area = cert["floor_area_m2"] if cert else None
         rows.append({
             "source": l["source"],
             "auction_date": l["auction_date"],
@@ -129,6 +159,12 @@ def main() -> None:
             "comp_median": med if med else "",
             "comp_count": n,
             "comp_iqr": iqr if iqr else "",
+            "floor_area_m2": area if area else "",
+            "age_band": (cert.get("age_band") or "") if cert else "",
+            "built_form": (cert.get("built_form") or "") if cert else "",
+            "epc_rating": (cert.get("rating") or "") if cert else "",
+            # The point of floor area: turn a £/property comp into £/m2.
+            "comp_per_m2": round(med / area, 1) if (med and area) else "",
         })
         kept += 1
 
@@ -139,9 +175,11 @@ def main() -> None:
         w.writerows(rows)
     have_comp = sum(1 for r in rows if r["comp_median"] != "")
     have_guide = sum(1 for r in rows if r["guide_price"] != "")
+    have_area = sum(1 for r in rows if r["floor_area_m2"] != "")
     print(f"wrote {out} — {kept:,} lots with a known sale price")
     print(f"  with a neighbourhood comp: {have_comp:,} ({100*have_comp//kept}%)")
     print(f"  with a guide price:        {have_guide:,} ({100*have_guide//kept}%)")
+    print(f"  with an EPC floor area:    {have_area:,} ({100*have_area//kept}%)")
 
 
 if __name__ == "__main__":
