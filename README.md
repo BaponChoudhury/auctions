@@ -175,6 +175,60 @@ Default is now `0..+90`.
 - 178 matches had more than one candidate sale in the window; they are flagged
   `recovered_ambiguous`.
 
+## Can the sale price be predicted?
+
+Yes, for ordinary houses. Evaluated on a **time-based split** (train on older
+auctions, test on later ones) so the model cannot see the future, using only
+features knowable before the hammer falls.
+
+| Segment | Median error | Within ±20% |
+|---|---|---|
+| **Houses (D/S/T), with EPC** | **15.0%** | — |
+| Houses (D/S/T) | 16.9% | 55.6% |
+| Residential incl. flats | 24.0% | 44.3% |
+| All lots | 36.2% | 33.8% |
+| Land / commercial | **79.9%** | 10.0% |
+
+Land and commercial are not predictable and should be excluded, not modelled.
+
+### Why: auction lots are not ordinary stock
+
+Median sale is **0.70× the local going rate** and **86% sell below** their
+neighbourhood median — but p10–p90 spans **0.31× to 1.08×**. The discount is
+real; its size is the hard part. The neighbourhood comp alone is a 54.9%-error
+predictor, worse than guessing the global median.
+
+Where a house publishes a guide, **the guide alone gets 24.0%** and the full
+model 21.5%. Most of the signal is already public on those lots. The model earns
+its place on the 78% of lots with no guide.
+
+### Two feature hypotheses, both tested
+
+| Feature | Effect on residential | Notes |
+|---|---|---|
+| Condition (from listing text) | **−1.5pp** | only ~6% of lots labelled |
+| EPC floor area | **−1.5pp** | 63% coverage |
+
+Both real, both modest. `comp_median` carries ~94% of the model's signal.
+
+**Do not divide by floor area.** Coefficient of variation of what we predict:
+`hammer / comp_median` **0.37** versus `hammer per m²` **1.26**. Price per square
+metre is a far noisier quantity than the ratio to local comps, so £/m² is a worse
+normalisation, not a better one. Floor area helps as a plain **size feature
+alongside** the comp — the same column used two ways, only one of which works.
+
+Feed EPC to **residential models only**: on a mixed set including land and
+commercial it makes accuracy slightly *worse* (+0.4pp), because those lots either
+have no certificate or one describing a building unrelated to the lot.
+
+### What this means in practice
+
+15–17% median error is enough to **shortlist a catalogue**, not to set a bid. On
+a £150,000 house that is roughly ±£25,000. The remaining error sits in condition,
+the legal pack and tenure — things a viewing and a survey reveal and no scrapable
+field captures. `src/area_report.py` reports local accuracy per area, which
+varies a lot (Stoke-on-Trent 13%, Birmingham 22%).
+
 ## Geography
 
 The scrapers record a **postcode** (99% coverage) and derive a **postcode sector**,
