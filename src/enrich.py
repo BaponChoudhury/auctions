@@ -38,7 +38,19 @@ try:
 except ImportError:
     psycopg2 = None
 
+# RETIRED. The Open Data Communities EPC API was switched off on 30 May 2026;
+# this host now 301s to get-energy-performance-data.communities.gov.uk, so every
+# request returns the new service's HTML landing page with a 200 status. The old
+# code read that as "no rows" and silently returned None for every lot, which is
+# worse than failing. epc_lookup() now says so instead of pretending to work.
+# Replacement route is a bulk download behind GOV.UK One Login — see src/epc_load.py.
 EPC_URL = "https://epc.opendatacommunities.org/api/v1/domestic/search"
+EPC_RETIRED_NOTE = (
+    "The EPC search API was retired on 30 May 2026 and now redirects to "
+    "get-energy-performance-data.communities.gov.uk, which requires GOV.UK One "
+    "Login and serves bulk downloads only. Download the domestic certificates "
+    "file from that service and use src/epc_load.py instead."
+)
 # UK-wide HPI series. The hpi table holds one row per (area_code, month), so a
 # lookup by month alone silently picks whichever region happens to sort first.
 DEFAULT_HPI_AREA = "K02000001"
@@ -167,6 +179,10 @@ def epc_lookup(postcode: str, address: str,
         return None
     if r.status_code != 200 or not r.text.strip():
         return None
+    if "json" not in (r.headers.get("content-type") or ""):
+        # The retired endpoint answers 200 with HTML. Do not treat that as "no
+        # certificate found" — it would quietly blank the EPC columns corpus-wide.
+        raise RuntimeError(EPC_RETIRED_NOTE)
     try:
         rows = r.json().get("rows", [])
     except ValueError:

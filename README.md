@@ -13,7 +13,7 @@ All data sources are free. No paid APIs.
 | Sold / unsold / withdrawn | Auction house results pages | Free (scrape) |
 | Days on market (auction cycle + re-offers) | Derived: listed_at → auction_date, re-offer tracking | Free (derived) |
 | Condition | Keyword classifier over lot description text | Free (derived) |
-| Floor area, property age, type, UPRN | EPC register API (epc.opendatacommunities.org) | Free (register email) |
+| Floor area, property age, type, UPRN | EPC bulk download (GOV.UK One Login) | Free, but sign-in required |
 | Prior sales of the same property | Land Registry Price Paid Data | Free (OGL) |
 | Neighbourhood average for similar property | Land Registry PPD + UK HPI adjustment | Free (OGL) |
 
@@ -272,8 +272,20 @@ Two consequences that matter for any analysis built on this:
 pip install requests beautifulsoup4 psycopg2-binary python-dotenv pytest
 ```
 
-1. **EPC API key** (free): register at https://epc.opendatacommunities.org/ — you get
-   Basic-auth credentials (your email + key). Put in `.env` as `EPC_EMAIL` / `EPC_KEY`.
+1. **EPC data** — ⚠️ **the API this pipeline was written against no longer exists.**
+   The Open Data Communities EPC search API was retired on **30 May 2026**;
+   `epc.opendatacommunities.org` now 301s to
+   `get-energy-performance-data.communities.gov.uk`, which requires **GOV.UK One
+   Login** and publishes **bulk downloads only**. An `EPC_EMAIL`/`EPC_KEY` pair
+   issued by the old service will not work, and there is no unattended API route
+   any more — somebody has to sign in and download the file.
+
+   Note the failure mode: the retired host answers **200 with HTML**, so the old
+   `epc_lookup()` read it as "no certificate found" and silently blanked the EPC
+   columns for every lot. It now raises instead.
+
+   To use EPC: sign in at the new service, download the domestic certificates
+   bulk file, unzip into `data/epc/`, then run `src/epc_load.py`.
 2. **Land Registry PPD**: download the yearly CSV (or full ~5GB file) from
    https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads
    and load into the `ppd` table (loader in enrich.py). Updated monthly.

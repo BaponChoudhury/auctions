@@ -23,6 +23,7 @@ from scrape_bondwolfe import (
 )
 from geo import _shape as geo_shape, lookup as geo_lookup
 from ppd_match import candidates, paon_number
+from epc_load import match as epc_match
 from scrape_emson import (
     classify_status as emson_status,
     parse_price as emson_price,
@@ -461,6 +462,47 @@ def test_emson_price(raw, price):
 ])
 def test_emson_property_type(heading, code):
     assert emson_type(heading) == code
+
+
+# ------------------------------------------------------------- EPC matching ---
+def _cert(addr, area=85.0, lodged="2024-01-01"):
+    from common import house_number as hn
+    return {"address": addr, "house_no": hn(addr), "floor_area_m2": area,
+            "age_band": "1900-1929", "rating": "D", "epc_property_type": "House",
+            "built_form": "Mid-Terrace", "uprn": "100", "lodged": lodged}
+
+
+EPC_LOT = {"postcode": "DE14 2EG",
+           "address_raw": "9 Byrkley Street, Burton-On-Trent DE14 2EG"}
+
+
+def test_epc_matches_on_house_number():
+    idx = {"DE14 2EG": [_cert("9 Byrkley Street"), _cert("11 Byrkley Street", 92.0)]}
+    m = epc_match(EPC_LOT, idx)
+    assert m["epc_match"] == "exact" and m["floor_area_m2"] == 85.0
+
+
+def test_epc_prefers_the_most_recent_certificate():
+    idx = {"DE14 2EG": [_cert("9 Byrkley Street", 80.0, "2012-05-01"),
+                        _cert("9 Byrkley Street", 88.0, "2023-09-01")]}
+    assert epc_match(EPC_LOT, idx)["floor_area_m2"] == 88.0
+
+
+def test_epc_will_not_guess_between_several_certificates():
+    """Attaching a neighbour's floor area would corrupt every £/m2 derived from it."""
+    lot = {"postcode": "DE14 2EG", "address_raw": "The Old Rectory, Burton DE14 2EG"}
+    idx = {"DE14 2EG": [_cert("9 Byrkley Street"), _cert("11 Byrkley Street")]}
+    assert epc_match(lot, idx) is None
+
+
+def test_epc_lone_certificate_is_flagged_fuzzy_not_exact():
+    lot = {"postcode": "DE14 2EG", "address_raw": "The Old Rectory, Burton DE14 2EG"}
+    idx = {"DE14 2EG": [_cert("9 Byrkley Street")]}
+    assert epc_match(lot, idx)["epc_match"] == "fuzzy"
+
+
+def test_epc_unknown_postcode_returns_nothing():
+    assert epc_match(EPC_LOT, {}) is None
 
 
 def test_all_sources_emit_the_same_record_shape():
