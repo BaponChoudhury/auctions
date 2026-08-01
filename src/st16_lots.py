@@ -80,7 +80,8 @@ for l in live[:15]:
     print(f"  {str(l['auction_date']):11} {l['status']:10} "
           f"{NAME.get(l.get('property_type'), '?'):10} guide {guide:>9}  "
           f"{l['address_raw'][:38]}")
-    print(f"              {HOUSE.get(l['source'], l['source'])}  {l['lot_url'][:66]}")
+    # Never truncate a URL: a shortened link looks usable and is not.
+    print(f"              {HOUSE.get(l['source'], l['source'])}  {l['lot_url']}")
 
 # --------------------------------------------------------- sold history ---
 sold = [l for l in area if l["hammer_price"] and l.get("property_type") in NAME]
