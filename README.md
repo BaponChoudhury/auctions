@@ -284,8 +284,27 @@ pip install requests beautifulsoup4 psycopg2-binary python-dotenv pytest
    `epc_lookup()` read it as "no certificate found" and silently blanked the EPC
    columns for every lot. It now raises instead.
 
-   To use EPC: sign in at the new service, download the domestic certificates
-   bulk file, unzip into `data/epc/`, then run `src/epc_load.py`.
+   **The replacement service does have a REST API** (an earlier note here wrongly
+   said bulk-only). Documented at
+   `get-energy-performance-data.communities.gov.uk/api-technical-documentation`:
+
+   | | |
+   |---|---|
+   | Base URL | `https://api.get-energy-performance-data.communities.gov.uk` |
+   | Auth | `Authorization: Bearer <token>` from your account page |
+   | Rate limit | 6,000 requests / 5 minutes per IP |
+   | Search | `GET /api/domestic/search?postcode=DE14+2EG` |
+   | Certificate | `GET /api/certificate?certificate_number=...` |
+
+   Floor area takes **two** calls: search returns certificate numbers and
+   addresses only; the full certificate carries the floor area. Certificate JSON
+   varies by RdSAP schema version, so `src/epc_api.py` locates the field by key
+   shape rather than assuming one name.
+
+   Put the token in `.env` as `EPC_BEARER_TOKEN`, then:
+   `python src/epc_api.py --lots "data/*.jsonl" --sold-only`
+
+   `src/epc_load.py` remains as an alternative for the bulk download route.
 2. **Land Registry PPD**: download the yearly CSV (or full ~5GB file) from
    https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads
    and load into the `ppd` table (loader in enrich.py). Updated monthly.
