@@ -63,6 +63,9 @@ _HEAVY_Q = r"(?:general|full|complete|total|extensive|substantial|significant|co
 _LIGHT_Q = r"(?:some|light|minor|cosmetic|slight|a little)"
 _WORK = (r"(?:modernisation|modernization|renovation|refurbishment|refurbishing|"
          r"updating|upgrading|improvement|improving|repairs?|works)")
+# Deliberately NOT in _WORK: "potential" and "development". In auction headings
+# "WITH POTENTIAL" means development potential — it appears on land, former
+# churches and care homes — and says nothing about the building's condition.
 # Up to two filler words ("and", "internal", …) between the qualifier and the noun.
 _GAP = r"(?:\s+\w+){0,2}?\s+"
 
@@ -75,6 +78,11 @@ CONDITION_RULES = [
     ]),
     ("full_refurb", [
         rf"{_VERB}{_SCHEME}\s+(?:{_HEAVY_Q}{_GAP})?{_WORK}",
+        # Auction HEADINGS are terse and drop the verb entirely:
+        #   "MID-TERRACE HOUSE FOR REFURBISHMENT", "HOUSE FOR IMPROVEMENT"
+        # That idiom covers ~250 lots in one house's catalogue that the
+        # sentence-shaped rules above never match.
+        rf"\bfor\s+(?:{_HEAVY_Q}\s+)?{_WORK}\b",
         r"uninhabitable", r"back to brick", r"renovation project", r"doer[- ]upper",
         r"full refurbishment", r"complete refurbishment",
     ]),

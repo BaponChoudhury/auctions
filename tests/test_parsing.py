@@ -212,6 +212,34 @@ def test_derelict_outbuilding_is_not_a_structural_lot():
     assert classify_condition(desc)[0] != "structural"
 
 
+@pytest.mark.parametrize("heading,cls", [
+    # Auction headings drop the verb: "<property> FOR <work>".
+    ("MID-TERRACE HOUSE FOR REFURBISHMENT",              "full_refurb"),
+    ("SEMI-DETACHED HOUSE FOR IMPROVEMENT",              "full_refurb"),
+    ("FIVE-BEDROOM HOUSE FOR TOTAL REFURBISHMENT",       "full_refurb"),
+    ("DETACHED BUNGALOW FOR IMPROVEMENT",                "full_refurb"),
+    ("THREE-BEDROOM HOUSE IN NEED OF IMPROVEMENT",       "full_refurb"),
+    ("GROUND FLOOR FLAT FOR IMPROVEMENT",                "full_refurb"),
+])
+def test_auction_heading_idiom(heading, cls):
+    assert classify_condition(heading)[0] == cls
+
+
+@pytest.mark.parametrize("heading", [
+    "FREEHOLD LAND WITH POTENTIAL",
+    "APPROXIMATELY 22 ACRES OF LAND WITH FUTURE POTENTIAL",
+    "SUBSTANTIAL FREEHOLD 22-BEDROOM FORMER CARE HOME WITH POTENTIAL",
+    "FORMER HOTEL FOR DEVELOPMENT POTENTIAL",
+    "MODERN FREEHOLD TWO-BEDROOM TERRACE HOUSE FOR INVESTMENT",
+    "DETACHED FOUR BEDROOM HOUSE - RESIDENTIAL INVESTMENT",
+])
+def test_potential_and_investment_are_not_condition(heading):
+    """'WITH POTENTIAL' is development potential, not disrepair — it appears on
+    land, former churches and care homes. 'FOR INVESTMENT' is a tenure signal.
+    Reading either as 'needs refurbishment' would mislabel hundreds of lots."""
+    assert classify_condition(heading)[0] == "unknown"
+
+
 def test_genuine_structural_still_fires():
     assert classify_condition("Evidence of subsidence to the main elevation")[0] == "structural"
 
