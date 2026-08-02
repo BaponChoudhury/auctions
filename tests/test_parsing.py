@@ -603,6 +603,30 @@ def test_allsop_generic_house_with_no_byline_stays_unknown():
     assert allsop_type({"residential_property_types": ["House"]}) is None
 
 
+def test_allsop_single_figure_guide_is_not_a_range():
+    """Allsop returns guide_price_upper == guide_price_lower for a plain
+    '£750,000+' guide. Keeping it made 1,538 of 1,784 lots look range-guided
+    and corrupted the guide-range analysis."""
+    from scrape_allsop import parse_lots
+    lot = {"allsop_lotid": "x", "allsop_address": "1 Test Street, London SW2 3LR",
+           "allsop_propertypostcode": "SW2 3LR", "allsop_lotstatus": "Sold",
+           "sale_price": "100000", "guide_price_lower": 750000,
+           "guide_price_upper": 750000}
+    rec = parse_lots([lot])[0]
+    assert rec.guide_price == 750000
+    assert rec.guide_price_max is None
+
+
+def test_allsop_genuine_range_is_kept():
+    from scrape_allsop import parse_lots
+    lot = {"allsop_lotid": "y", "allsop_address": "2 Test Street, London SW2 3LR",
+           "allsop_propertypostcode": "SW2 3LR", "allsop_lotstatus": "Sold",
+           "sale_price": "100000", "guide_price_lower": 600000,
+           "guide_price_upper": 650000}
+    rec = parse_lots([lot])[0]
+    assert (rec.guide_price, rec.guide_price_max) == (600000, 650000)
+
+
 def test_allsop_description_joins_byline_and_features():
     lot = {"main_byline": "Freehold Shop and Residential Investment",
            "features": ["Comprising a ground floor shop", "Requires modernisation"]}

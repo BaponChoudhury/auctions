@@ -186,6 +186,15 @@ def parse_lots(results: list[dict]) -> list[LotRecord]:
             lot.get("allsop_lotstatus") or lot.get("lot_status") or lot.get("lotStatus"),
             lot.get("sale_price"))
 
+        # Allsop returns guide_price_upper == guide_price_lower for a plain
+        # "£750,000+" guide, which is a single figure, not a range. Storing it
+        # anyway makes 1,538 of 1,784 lots look range-guided when they are not,
+        # and quietly corrupts any guide-range analysis.
+        g_lo = _int(lot.get("guide_price_lower"))
+        g_hi = _int(lot.get("guide_price_upper"))
+        if g_hi is not None and g_lo is not None and g_hi <= g_lo:
+            g_hi = None
+
         lots.append(LotRecord(
             source="allsop",
             source_lot_id=str(lot["allsop_lotid"]),
@@ -195,8 +204,8 @@ def parse_lots(results: list[dict]) -> list[LotRecord]:
             postcode=postcode,
             postcode_sector=sector,
             property_key=prop_key,
-            guide_price=_int(lot.get("guide_price_lower")),
-            guide_price_max=_int(lot.get("guide_price_upper")),
+            guide_price=g_lo,
+            guide_price_max=g_hi,
             hammer_price=hammer,
             status=status,
             result_raw="; ".join(filter(None, [
