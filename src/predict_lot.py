@@ -89,6 +89,31 @@ def comps(idx, sector, ptype, as_at, months=24):
     return int(statistics.median(prices)), len(prices), iqr
 
 
+# Measured in check_calibration.py on held-out auctions:
+#   £0-200k    16-22% error, bias ~1.00x   -> trustworthy
+#   £200-400k  20% error,    bias 0.87x    -> under-predicts
+#   £400k+     53% error,    bias 0.50x    -> predicts about half of reality
+# Only 1.7% of training lots are above £400k, so there is little for the model to
+# learn from up there. Anything above these thresholds gets a warning rather than
+# a silent number.
+RELIABLE_TO = 200_000
+UNRELIABLE_ABOVE = 400_000
+
+
+def reliability(point, comp_median):
+    """Plain-language health warning for a single prediction."""
+    worst = max(point, comp_median or 0)
+    if worst >= UNRELIABLE_ABOVE:
+        return ("UNRELIABLE",
+                "above £400k the model's median error is 53% and it predicts "
+                "about half of actual. Use comparable sales, not this.")
+    if worst >= RELIABLE_TO:
+        return ("WEAK",
+                "£200k-£400k: median error 20% and it under-predicts by ~13%. "
+                "Treat as a floor, not an estimate.")
+    return ("OK", "")
+
+
 def build_model(df):
     """Train on everything before the last 20% of auctions; measure error on the rest."""
     df = df.sort_values("auction_date")
@@ -175,6 +200,9 @@ def main() -> None:
     print(f"    80% confidence     £{lo80:,.0f} - £{hi80:,.0f}")
     print(f"    (interval from {n_te:,} later auctions the model never saw;")
     print(f"     median absolute error {mdape:.0f}%)")
+    flag, why = reliability(point, med)
+    if flag != "OK":
+        print(f"\n    ** {flag}: {why} **")
 
     # ---- 2. guide ----------------------------------------------------------
     if args.guide:

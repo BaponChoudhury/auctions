@@ -1,0 +1,8 @@
+recorded_at,lot_id,address,postcode,type,beds,guide,auction_date,house,format,model_point,model_lo,model_hi,consensus_lo,consensus_hi,reliability,note,actual_hammer,actual_status,scored_at
+2026-08-02 20:35,sdl-51522,"Cherry Arbour, The Rank, Gnosall, Stafford",ST20 0BU,D,,230000,2026-08-26,SDL,unconditional,318024,268571,401107,268571,342700,WEAK,detached bungalow,,,
+2026-08-02 20:36,uth-byron-close,"12 Byron Close, Stafford",ST16 3NY,S,3,34000,2026-08-12,Under The Hammer,unconditional,158436,133799,199827,37400,199827,WEAK,vacant freehold; guide far below local band - check legal pack,,,
+2026-08-02 20:36,bjb-sandon-road,"Sandon Road, Stafford (block of 3)",ST16 3ES,T,8,240000,,Butters John Bee,unconditional,228515,192981,288214,264000,288214,WEAK,MULTI-UNIT - per-property model does not apply,,,
+2026-08-02 20:36,pat-albert-terrace,"Albert Terrace, Stafford",ST16 3EX,T,3,100000,,Pattinson,secure-sale,139140,117504,175491,117504,175491,OK,"tenanted GBP 545pcm; conditional format, reservation fee on top",,,
+2026-08-02 20:37,pat-john-amery,"John Amery Drive, Stafford",ST17 9PE,T,2,135000,,Pattinson,secure-sale,99323,83878,125270,83878,125270,OK,conditional format,,,
+2026-08-02 20:37,dbr-prospect-road,"Prospect Road, Beaconside, Stafford",ST16 3,T,3,130000,,D B Roberts,modern-method,139140,117504,175491,117504,175491,OK,MMoA; reservation fee on top,,,
+2026-08-02 20:37,dbr-bellasis-st,"Bellasis Street, Stafford",ST16 3,T,2,110000,,D B Roberts,modern-method,110872,93631,139837,93631,139837,OK,MMoA; reservation fee on top,,,
