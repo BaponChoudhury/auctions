@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "auction-ui",
+      "runtimeExecutable": ".venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "streamlit", "run", "ui/app.py",
+                      "--server.port", "8502", "--server.headless", "true"],
+      "port": 8502
+    }
+  ]
+}
